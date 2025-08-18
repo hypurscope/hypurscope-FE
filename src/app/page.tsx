@@ -1,8 +1,9 @@
-"use client";
 
 import MetricsOverview from "@/components/common/MetricsOverview";
 import Tabs from "@/components/common/Tabs";
-import { TVLOverview, Stablecoins, Protocols } from "@/components/home";
+import { TVLOverview } from "@/components/home";
+import Protocols from "@/components/home/Protocols";
+import Stablecoins from "@/components/home/Stablecoins";
 import { MetricData } from "@/types";
 
 export default function Home() {
@@ -16,12 +17,12 @@ export default function Home() {
         period: "from last week",
       },
     },
-    {
-      label: "Supported assets",
-      value: "3",
-      change: undefined,
-      description: "USDC, USDT, DAI",
-    },
+    // {
+    //   label: "Supported assets",
+    //   value: "3",
+    //   change: undefined, // No change data
+    //   description: "USDC, USDT, DAI",
+    // },
     {
       label: "Protocols",
       value: "3",
@@ -33,7 +34,6 @@ export default function Home() {
     },
   ];
 
-  // Simple tab items for testing the transition
   const tabItems = [
     {
       key: "TVL",
@@ -45,23 +45,22 @@ export default function Home() {
       label: "Stablecoins",
       content: <Stablecoins />,
     },
-    {
-      key: "protocols",
-      label: "Protocols",
-      content: <Protocols />,
-    },
+    // {
+    //   key: "protocols",
+    //   label: "Protocols",
+    //   content: <Protocols />,
+    // },
   ];
-
   return (
     <div className="pt-10">
-      <section className="mx-40 grid grid-cols-3 gap-8">
+      <section className="mx-40 justify-items-center grid grid-cols-2 gap-4">
         {defaultMetrics.map((metric, index) => (
-          <MetricsOverview key={index} metric={metric} />
+          <MetricsOverview key={index} metric={metric} className="max-w-[300px]" />
         ))}
       </section>
 
-      <section className="mt-10 mx-5 ">
-        <div>
+      <section className="mt-10 mx-20">
+      <div>
           <Tabs items={tabItems} defaultValue={tabItems[0].key} />
         </div>
       </section>
