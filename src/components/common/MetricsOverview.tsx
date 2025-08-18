@@ -13,13 +13,15 @@ const MetricsOverview: React.FC<MetricsOverviewProps> = ({
   className = "",
 }) => {
   return (
-    <div className="rounded-[10px] font-geist-sans text-black border-[0.5px] border-[#DFDFDF] px-10 py-5 flex flex-col gap-2 w-full max-w-">
-      <span className="font-medium">{metric.label}</span>
+    <div
+      className={`rounded-[10px] font-geist-sans text-black border-[0.5px] border-[#DFDFDF] px-12 py-5 flex flex-col justify-center gap-2 w-full ${className}`}
+    >
+      <span className="font-medium w-fit">{metric.label}</span>
 
-      <h3 className="font-semibold text-3xl ">{metric.value}</h3>
+      <h3 className="font-semibold text-3xl w-fit ">{metric.value}</h3>
 
       {metric.change ? (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center w-fit gap-2">
           <span
             className={` flex items-center gap-1  ${
               metric.change.direction === "up"
@@ -27,7 +29,12 @@ const MetricsOverview: React.FC<MetricsOverviewProps> = ({
                 : "text-red-600"
             }`}
           >
-           {metric.change.direction === "up" ? <TrendingUp /> : <TrendingDown />} {metric.change.percentage}
+            {metric.change.direction === "up" ? (
+              <TrendingUp />
+            ) : (
+              <TrendingDown />
+            )}{" "}
+            {metric.change.percentage}
           </span>
           <span className=" text-gray-500">{metric.change.period}</span>
         </div>

@@ -59,14 +59,14 @@ const Tabs = ({
   const groupId = useId();
 
   return (
-    <div>
+    <div className="flex flex-col items-center w-full">
       <div
         role="tablist"
         aria-orientation="horizontal"
-        className={`relative flex w-full gap-1 rounded-lg bg-[#F4F4F4] p-1 `}
+        className={`relative flex w-full slef-center max-w-[800px] gap-1 rounded-lg bg-[#F4F4F4] p-1 `}
       >
         {/* Animated active background (shared layoutId) */}
-        <div className="relative flex w-full  justify-between gap-1">
+        <div className="relative flex w-full   justify-between gap-1">
           {items.map((item) => {
             const isActive = item.key === active;
             const id = `${groupId}-${item.key}`;
@@ -104,7 +104,7 @@ const Tabs = ({
 
       {/* Panels - only render if items have content */}
       {items.some((item) => item.content) && (
-        <div className="mt-3">
+        <div className="mt-10 w-full">
           <AnimatePresence mode="wait">
             {items.map((item) => {
               const isActive = item.key === active;
