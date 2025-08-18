@@ -9,3 +9,9 @@ export interface MetricData {
     };
 }
 
+
+export interface ChartDataPoint {
+  date: string;
+  value: number;
+  displayValue?: string; // For formatted display (e.g., "$1.9B")
+}
