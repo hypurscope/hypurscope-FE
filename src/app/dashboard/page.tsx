@@ -5,7 +5,7 @@ import TokenHolders from "@/components/dashboard/TokenHolders";
 
 const Dashboard = () => {
   return (
-    <main className="space-y-10">
+    <main className="space-y-10 mb-10 mt-16">
       <Tabs
         items={[
           {
