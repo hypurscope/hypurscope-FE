@@ -10,8 +10,6 @@ import {
   CartesianGrid,
 } from "recharts";
 
-
-
 interface AreaChartProps {
   data: ChartDataPoint[];
   height?: number;
@@ -65,9 +63,9 @@ const AreaChartComponent = ({
               </linearGradient>
             )}
           </defs>
-          <CartesianGrid 
-            strokeDasharray="3 3" 
-            stroke="#f0f0f0" 
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="#f0f0f0"
             horizontal={true}
             vertical={true}
           />
