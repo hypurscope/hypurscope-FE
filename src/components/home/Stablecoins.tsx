@@ -1,13 +1,17 @@
+import GrowthTrends from "../stablecoins/GrowthTrends";
+import StableCoinsDistribution from "../stablecoins/StableCoinsDistribution";
+
 export default function Stablecoins() {
   return (
-    <div className="py-6">
-      <h3 className="text-xl font-semibold mb-4">Stablecoins</h3>
+    <div className="py-6 flex flex-col gap-10">
       <div className="space-y-4">
-        {/* Stablecoin list, distributions, etc. */}
-        <div className="bg-white p-4 rounded-lg border">
-          <p>USDC, USDT, DAI breakdown</p>
-        </div>
+        <StableCoinsDistribution
+          title="Stablecoin Distribution"
+        />
       </div>
+      <section>
+        <GrowthTrends/>
+      </section>
     </div>
   );
 }
