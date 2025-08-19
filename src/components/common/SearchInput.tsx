@@ -36,7 +36,7 @@ const SearchInput = ({
         onPaste={handlePaste}
         onChange={handleSearch}
         type="text"
-        className="w-full font-geist-sans  h-full p-2.5 outline-none"
+        className="w-full rounded-l-[10px] font-geist-sans  h-full p-2.5 outline-none"
         placeholder={placeholder}
       />
       <button

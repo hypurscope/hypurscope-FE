@@ -63,7 +63,7 @@ const Tabs = ({
       <div
         role="tablist"
         aria-orientation="horizontal"
-        className={`relative flex w-full slef-center max-w-[800px] gap-1 rounded-lg bg-[#F4F4F4] p-1 `}
+        className={`relative flex w-full slef-center ${className ? className : "max-w-[800px]"} gap-1 rounded-lg bg-[#F4F4F4] p-1 `}
       >
         {/* Animated active background (shared layoutId) */}
         <div className="relative flex w-full   justify-between gap-1">
@@ -116,6 +116,7 @@ const Tabs = ({
                     key={item.key}
                     id={`${id}-panel`}
                     role="tabpanel"
+                    className=""
                     aria-labelledby={id}
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
