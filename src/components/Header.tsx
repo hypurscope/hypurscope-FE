@@ -1,8 +1,12 @@
+"use client";
 import Image from "next/image";
 import React from "react";
-import { Search } from "lucide-react";
+import SearchInput from "./common/SearchInput";
+import { useState } from "react";
 
 const Header = () => {
+  const [query, setQuery] = useState("");
+
   return (
     <header className="w-full flex flex-col gap-8  ">
       <nav>
@@ -25,16 +29,11 @@ const Header = () => {
             Real-time insights into HyperEVM and HyperCore data layers
           </p>
         </div>
-        <div className="bg-[#F4F4F4] h-11 flex items-center justify-between rounded-[10px] w-full max-w-[510px] ">
-          <input
-            type="text"
-            className="w-full h-full p-2.5"
-            placeholder="Search wallets, protocols, tokens..."
-          />
-          <button className="bg-[#1969FE] w-8 h-8 m-2.5 flex justify-center items-center p-2 rounded-sm">
-            <Search className="text-white h-4 w-4" />
-          </button>
-        </div>
+        <SearchInput
+          handleSearch={(e) => setQuery(e.target.value)}
+          query={query}
+          placeholder="Search wallets, protocols, tokens..."
+        />
       </section>
     </header>
   );
