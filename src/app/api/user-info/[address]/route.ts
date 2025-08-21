@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const revalidate = 60; // cache for 1 minute
 
+type Params = {
+    // This might be a promise that resolves to an object containing the address parameter
+    params: Promise<{
+        address: string;
+    }>;
+}
+
 export async function GET(
     req: NextRequest,
-    { params }: { params: { address: string } }
+    { params }: Params
 ) {
-    const { address } = params;
+    const { address } = await params;
     const { searchParams } = new URL(req.url);
     const start = searchParams.get("start_time") || "2000-01-01 00:00"; // go way back by default
 

@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const revalidate = 300; // cache 5 minutes
 
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
 
     const upstream = "https://hyper-dev-p1ob.onrender.com/api/defi";
     const res = await fetch(upstream, { next: { revalidate } });
-    if (!res.ok) return new Response("Upstream error", { status: 502 });
+    if (!res.ok) return NextResponse.json("Upstream error", { status: 502 });
     const json = await res.json();
 
     const protocols: any[] = Array.isArray(json) ? json : [json];
@@ -105,5 +105,5 @@ export async function GET(req: NextRequest) {
         displayValue: fmtUSD(value),
     }));
 
-    return Response.json({ items });
+    return NextResponse.json({ items });
 }

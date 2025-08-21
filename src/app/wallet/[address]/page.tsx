@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import Tabs from "@/components/common/Tabs";
 import OpenPositions from "@/components/wallet/OpenPositions";
 import TradingHistory from "@/components/wallet/TradingHistory";
-import VaultSummary from "@/components/wallet/VaultSummary";
 import SpotTokenHoldings from "@/components/wallet/SpotTokenHoldings";
 import StakingSummary from "@/components/wallet/StakingSummary";
 import DelegationSummary from "@/components/wallet/DelegationSummary";
@@ -11,17 +10,24 @@ import { formatUSDCompact } from "@/lib/utils";
 
 const isValidAddress = (s: string) => /^0x[a-fA-F0-9]{40}$/.test(s);
 
-export default async function WalletPage({
-  params: { address },
-}: {
-  params: { address: string };
-}) {
+type Params = {
+  // This might be a promise that resolves to an object containing the address parameter
+  params: Promise<{
+    address: string;
+  }>;
+};
+
+// Receive params from Next.js directly
+export default async function WalletPage({ params }: Params) {
+  const { address } = await params;
+
   if (!isValidAddress(address)) notFound();
 
-  // Fetch portfolio overview from upstream with a far-back start_time to include full history
+  // Fetch portfolio overview
   let accountValue: string = "-";
   let netVolume: string = "-";
   let withdrawable: string = "-";
+
   try {
     const url = `https://hyper-dev-p1ob.onrender.com/api/user-info/${address}?start_time=${encodeURIComponent(
       "2000-01-01 00:00"
@@ -52,11 +58,6 @@ export default async function WalletPage({
       label: "Trading History",
       content: <TradingHistory address={address} />,
     },
-    // {
-    //   key: "vaultSummary",
-    //   label: "Vault Summary",
-    //   content: <VaultSummary address={address} />,
-    // },
   ];
 
   const overviewData = [
@@ -77,7 +78,8 @@ export default async function WalletPage({
           Complete portfolio value and performance summary
         </p>
       </div>
-      <section className="grid grid-cols-1 gap-1 md:grid-cols-3 mt-8 mb-20 mx-auto  justify-items-center w-full max-w-4xl">
+
+      <section className="grid grid-cols-1 gap-1 md:grid-cols-3 mt-8 mb-20 mx-auto justify-items-center w-full max-w-4xl">
         {overviewData.map((data) => (
           <MetricCard
             key={data.label}
@@ -87,10 +89,12 @@ export default async function WalletPage({
           />
         ))}
       </section>
+
       <section className="w-full">
         <Tabs items={items} defaultValue={items[0].key} className="max-w-6xl" />
         <hr className="border-t border-[#BAD2FF] mt-20 max-w-[1084px] mx-auto" />
       </section>
+
       <section className="space-y-20 w-full mt-14">
         <SpotTokenHoldings address={address} />
         <StakingSummary />

@@ -106,7 +106,7 @@ export default function TokenHolders() {
       .filter(Boolean)
       .map(Number);
     if (parts.length >= 3) {
-      let [yy, mm, dd] = parts;
+      const [yy, mm, dd] = parts;
       const y = yy < 100 ? 2000 + yy : yy;
       const date = new Date(Date.UTC(y, Math.max(0, (mm || 1) - 1), dd || 1));
       return date.toLocaleDateString(undefined, {

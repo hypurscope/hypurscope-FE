@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const revalidate = 300; // 5 min cache
 
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     const pageSize = Math.min(100, Math.max(1, Number(searchParams.get("pageSize") || 20)));
 
     if (!token) {
-        return Response.json(
+        return NextResponse.json(
             { error: "Missing token parameter" },
             { status: 400 }
         );
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     const upstream = `https://hyper-dev-p1ob.onrender.com/api/get-holder/${encodeURIComponent(token)}`;
     const res = await fetch(upstream, { next: { revalidate } });
-    if (!res.ok) return new Response("Upstream error", { status: 502 });
+    if (!res.ok) return NextResponse.json("Upstream error", { status: 502 });
     const json = (await res.json()) as UpstreamResponse;
 
     const entries = Object.entries(json.holders || {});
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
         };
     });
 
-    return Response.json({
+    return NextResponse.json({
         token: json.token ?? token,
         lastUpdate: json.lastUpdate ?? null,
         totalHolders,
