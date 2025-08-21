@@ -1,5 +1,4 @@
 "use client";
-import { defaultData } from "@/data";
 import { StablecoinItem } from "@/types";
 import Image from "next/image";
 import React from "react";
@@ -9,8 +8,6 @@ export interface StableCoinsDistributionProps {
   items?: StablecoinItem[];
   className?: string;
 }
-
-
 
 function formatBillionsUSD(n: number): string {
   if (!Number.isFinite(n)) return "$0";
@@ -38,83 +35,102 @@ const TokenChip: React.FC<{ symbol: string; color?: string }> = ({
       className="inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold text-white"
       style={{ backgroundColor: color }}
     >
-      {symbol[0]}
+      {symbol?.[0] ?? "?"}
     </span>
   </span>
 );
 
-const Bar: React.FC<{ percent: number }> = ({ percent }) => (
-  <div className="relative h-2 w-full rounded-full bg-[#F3F4F6]">
-    <div
-      className="absolute left-0 top-0 h-full rounded-full bg-[#1F1F1F]"
-      style={{ width: `${Math.max(0, Math.min(100, percent))}%` }}
-    />
+const SkeletonRow: React.FC = () => (
+  <div className="flex flex-col gap-2 animate-pulse">
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex items-center gap-2">
+        <div className="h-7 w-7 rounded-full bg-gray-200" aria-hidden />
+        <div className="h-4 w-20 rounded bg-gray-200" />
+      </div>
+      <div className="h-5 w-24 rounded bg-gray-200" />
+    </div>
+    <div className="h-2 w-full rounded-full bg-[#F3F4F6]" />
+    <div className="h-3 w-32 rounded bg-gray-100" />
   </div>
 );
 
 const StableCoinsDistribution: React.FC<StableCoinsDistributionProps> = ({
   title = "Stablecoin Distribution",
-  items = defaultData,
+  items,
   className,
 }) => {
+  const isLoading = !items || items.length === 0;
+
   return (
-    <section className={`${className} font-geist-sans`}>
+    <section className={`${className ?? ""} font-geist-sans`}>
       <h3 className="mb-8 text-xl font-medium text-black md:text-2xl">
         {title}
       </h3>
 
       <div className="flex flex-col gap-8">
-        {items.map((item) => {
-          const positive = item.changePct >= 0;
-          return (
-            <div key={item.symbol} className="flex flex-col gap-2">
-              {/* Row header */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  {item.logo ? (
-                    <Image
-                      src={item.logo}
-                      alt={`${item.symbol} logo`}
-                      width={24}
-                      height={24}
-                      className="h-7 w-7"
-                    />
-                  ) : (
+        {isLoading ? (
+          <>
+            <SkeletonRow />
+            <SkeletonRow />
+          </>
+        ) : (
+          items!.map((item) => {
+            const positive = item.changePct >= 0;
+            return (
+              <div key={item.symbol} className="flex flex-col gap-2">
+                {/* Row header */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    {item.logo ? (
+                      <Image
+                        src={item.logo}
+                        alt={`${item.symbol} logo`}
+                        width={24}
+                        height={24}
+                        className="h-7 w-7"
+                      />
+                    ) : (
+                      <TokenChip symbol={item.symbol} color={item.color} />
+                    )}
+                    <span className="text-base font-medium text-black">
+                      {item.symbol}
+                    </span>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-base font-semibold text-black">
+                      {formatBillionsUSD(item.value)}
+                    </div>
                     <div
-                      className="h-6 w-6 rounded-full bg-gray-200"
-                      aria-hidden
-                    />
-                  )}
-                  <span className="text-base font-medium text-black">
-                    {item.symbol}
-                  </span>
+                      className={`text-sm ${
+                        positive ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {positive ? "+" : ""}
+                      {item.changePct.toFixed(2)}%
+                    </div>
+                  </div>
                 </div>
 
-                <div className="text-right">
-                  <div className="text-base font-semibold text-black">
-                    {formatBillionsUSD(item.value)}
-                  </div>
+                {/* Progress bar */}
+                <div className="relative h-2 w-full rounded-full bg-[#F3F4F6]">
                   <div
-                    className={`text-sm ${
-                      positive ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    {positive ? "+" : ""}
-                    {item.changePct.toFixed(2)}%
-                  </div>
+                    className="absolute left-0 top-0 h-full rounded-full"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, item.percent))}%`,
+                      backgroundColor: item.color ?? "#1F1F1F",
+                    }}
+                  />
+                </div>
+
+                {/* Subtext */}
+                <div className="text-sm text-[#9CA3AF]">
+                  {item.percent.toFixed(1)}% of total stablecoins
                 </div>
               </div>
-
-              {/* Progress bar */}
-              <Bar percent={item.percent} />
-
-              {/* Subtext */}
-              <div className="text-sm text-[#9CA3AF]">
-                {item.percent.toFixed(1)}% of total TVL
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </section>
   );
