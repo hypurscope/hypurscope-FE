@@ -79,14 +79,15 @@ const Header = () => {
         </section>
       ) : pathname.startsWith("/wallet/") ? (
         <section className="flex items-center justify-between font-geist-sans">
-          <h3 className="font-semibold text-3xl ">
-            Wallet Overview
-          </h3>
+          <div className="flex flex-col gap-2">
+            <h3 className="font-semibold text-3xl ">Wallet Overview</h3>
+            <p className="text-xs text-[#777777]">{walletFromUrl}</p>
+          </div>
           <SearchInput
             handleSearch={(e) => setQuery(e.target.value)}
             query={query}
             onSubmit={go}
-            placeholder={walletFromUrl ?? "Paste a wallet address"}
+            placeholder={"Paste a wallet address"}
           />
         </section>
       ) : (

@@ -71,7 +71,7 @@ export default async function WalletPage({ params }: Params) {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl py-8 space-y-6 flex flex-col items-center">
+    <div className="mx-auto max-w-6xl py-8 space-y-6 flex flex-col items-center mt-5">
       <div className="space-y-1 font-geist-sans w-full">
         <h1 className="text-2xl font-medium">Perpetuals Portfolio</h1>
         <p className="text-tertiary">
