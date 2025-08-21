@@ -1,28 +1,81 @@
-import React from "react";
+"use client";
+import React, { useEffect, useMemo, useState } from "react";
+import { formatNumberCompact, formatUSDCompact } from "@/lib/utils";
+import { Pagination } from "@/components/ui/pagination";
+
+type SpotTokenHoldingsProps = { address: string };
 
 type Row = {
   token: string;
-  balance: string;
-  value: string;
-  allocation: string;
+  balance: string; // compact amount, no commas
+  value: string; // USD compact
+  allocation: string; // percent with %
 };
 
-const defaultRows: Row[] = [
-  {
-    token: "USDC",
-    balance: "45,230.50",
-    value: "$45,230",
-    allocation: "24.2%",
-  },
-  { token: "ETH", balance: "28.75", value: "$121,010", allocation: "38.5%" },
-  { token: "BTC", balance: "1.08", value: "$121,000", allocation: "6.2%" },
-];
+export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
 
-export default function SpotTokenHoldings({
-  rows = defaultRows,
-}: {
-  rows?: Row[];
-}) {
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch(
+          `/api/user-info/${address}?start_time=${encodeURIComponent(
+            "2000-01-01 00:00"
+          )}`
+        );
+        if (!res.ok) throw new Error("Failed to load spot holdings");
+        const data = await res.json();
+        const holdings = (data?.user_spot_state?.["Holdings"] || []) as any[];
+
+        // Compute USD values and allocations
+        const detailed = holdings.map((h) => {
+          const coin = String(h?.coin ?? "-");
+          const total = Number(h?.total ?? 0); // quantity
+          const entry = Number(h?.entry ?? 0); // USD price per unit
+          const usd = total * entry;
+          return { coin, total, entry, usd };
+        });
+        const sumUSD =
+          detailed.reduce((acc, d) => acc + (isFinite(d.usd) ? d.usd : 0), 0) ||
+          0;
+        const mapped: Row[] = detailed.map((d) => {
+          const pct = sumUSD > 0 ? (d.usd / sumUSD) * 100 : 0;
+          return {
+            token: d.coin,
+            balance: formatNumberCompact(d.total, 2),
+            value: formatUSDCompact(d.usd, 2),
+            allocation: `${pct.toFixed(2)}%`,
+          };
+        });
+        if (!cancelled) {
+          setRows(mapped);
+          setPage(1);
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message ?? "Error");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const paged = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return rows.slice(start, start + pageSize);
+  }, [rows, page]);
+
   return (
     <section className="space-y-3 font-geist-sans">
       <div>
@@ -42,7 +95,7 @@ export default function SpotTokenHoldings({
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
+            {paged.map((r) => (
               <tr key={r.token} className="border-t border-[#EEF3FF]">
                 <td className="px-5 py-4">{r.token}</td>
                 <td className="px-5 py-4">{r.balance}</td>
@@ -50,9 +103,26 @@ export default function SpotTokenHoldings({
                 <td className="px-5 py-4">{r.allocation}</td>
               </tr>
             ))}
+            {paged.length === 0 && !loading && (
+              <tr>
+                <td className="px-5 py-6 text-center text-black/50" colSpan={4}>
+                  No holdings
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
+        {loading && <div className="p-4 text-sm text-gray-500">Loading…</div>}
+        {error && <div className="p-4 text-sm text-red-500">{error}</div>}
       </div>
+      {rows.length > pageSize && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={(p) => setPage(p)}
+          className=" px-3 py-3 mt-5"
+        />
+      )}
     </section>
   );
 }
