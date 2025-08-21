@@ -11,7 +11,7 @@ const Dashboard = () => {
           {
             key: "Spot USDC Holders",
             label: "Spot USDC Holders",
-            content: <USDCSpotHolders datasetKey="Spot USDC Holders" />,
+            content: <USDCSpotHolders />,
           },
           {
             key: "Token Holders",
