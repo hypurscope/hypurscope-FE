@@ -28,6 +28,7 @@ export type StablecoinItem = {
 // Holders/spot trends for composite chart (area + lines)
 export interface HoldersTrendPoint {
   date: string; // e.g., "Jan 01"
+  ts?: number; // unix ms for precise axis/tooltip
   spotUSDCM: number; // Total spot USDC in millions (left axis)
   holders: number; // Number of holders (right axis)
   hip2M: number; // HIP-2 amount in millions (left axis)
