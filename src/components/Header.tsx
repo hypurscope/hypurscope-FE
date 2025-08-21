@@ -57,16 +57,6 @@ const Header = () => {
               Dashboard
             </button>
           </Link>
-
-          <Link href="/">
-            <button
-              className={`px-4 py-1.5 cursor-pointer ${
-                isActive("/") ? "border-b-2 border-b-black text-black" : ""
-              }`}
-            >
-              Stats
-            </button>
-          </Link>
         </div>
       </nav>
 
