@@ -1,7 +1,7 @@
 "use client";
 import { StablecoinItem } from "@/types";
 import Image from "next/image";
-import React from "react";
+import React, { useMemo } from "react";
 
 export interface StableCoinsDistributionProps {
   title?: string;
@@ -60,6 +60,11 @@ const StableCoinsDistribution: React.FC<StableCoinsDistributionProps> = ({
   className,
 }) => {
   const isLoading = !items || items.length === 0;
+  const sorted = useMemo(
+    () =>
+      items ? [...items].sort((a, b) => (b.value ?? 0) - (a.value ?? 0)) : [],
+    [items]
+  );
 
   return (
     <section className={`${className ?? ""} font-geist-sans`}>
@@ -74,7 +79,7 @@ const StableCoinsDistribution: React.FC<StableCoinsDistributionProps> = ({
             <SkeletonRow />
           </>
         ) : (
-          items!.map((item) => {
+          sorted.map((item) => {
             const positive = item.changePct >= 0;
             return (
               <div key={item.symbol} className="flex flex-col gap-2">

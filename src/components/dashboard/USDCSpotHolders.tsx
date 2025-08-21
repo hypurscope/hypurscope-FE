@@ -121,7 +121,7 @@ const USDCSpotHolders: React.FC = () => {
 
       {/* Title */}
       <section className="max-w-[1137px] mt-8  w-full flex flex-col ">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between">
           <h3 className="text-2xl font-semibold text-black">
             Spot USDC Trends
           </h3>
