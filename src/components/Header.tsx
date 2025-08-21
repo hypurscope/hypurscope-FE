@@ -39,7 +39,7 @@ const Header = () => {
           <Image
             src="https://res.cloudinary.com/dhvwthnzq/image/upload/v1755094133/hyperscope/HyperScope_gze9aw.svg"
             alt="Logo"
-            className="h-10 w-fit object-cover"
+            className="h-5 lg:h-10 w-40 lg:w-fit object-cover"
             width={100}
             height={200}
           />
@@ -61,38 +61,46 @@ const Header = () => {
       </nav>
 
       {pathname === "/" ? (
-        <section className="flex items-center justify-between">
-          <div className="w-full max-w-sm">
-            <h2 className="font-semibold text-3xl font-geist-sans">
+        <section className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+          <div className="w-full md:max-w-sm">
+            <h2 className="font-semibold text-2xl md:text-3xl font-geist-sans">
               Hyperliquid Explorer
             </h2>
-            <p className="text-tertiary text-base mt-2">
+            <p className="text-tertiary text-sm md:text-base md:mt-2">
               Real-time insights into HyperEVM and HyperCore data layers
             </p>
           </div>
-          <SearchInput
-            handleSearch={(e) => setQuery(e.target.value)}
-            query={query}
-            onSubmit={go}
-            placeholder="Search wallets, protocols, tokens..."
-          />
+          <div className="w-full max-w-[510px]">
+            <SearchInput
+              handleSearch={(e) => setQuery(e.target.value)}
+              query={query}
+              onSubmit={go}
+              placeholder="Search wallets, protocols, tokens..."
+            />
+          </div>
         </section>
       ) : pathname.startsWith("/wallet/") ? (
-        <section className="flex items-center justify-between font-geist-sans">
-          <div className="flex flex-col gap-2">
-            <h3 className="font-semibold text-3xl ">Wallet Overview</h3>
-            <p className="text-xs text-[#777777]">{walletFromUrl}</p>
+        <section className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 font-geist-sans">
+          <div className="flex flex-col gap-2 w-full md:w-auto">
+            <h3 className="font-semibold text-2xl md:text-3xl ">
+              Wallet Overview
+            </h3>
+            <p className="text-xs text-[#777777] break-all md:break-normal">
+              {walletFromUrl}
+            </p>
           </div>
-          <SearchInput
-            handleSearch={(e) => setQuery(e.target.value)}
-            query={query}
-            onSubmit={go}
-            placeholder={"Paste a wallet address"}
-          />
+          <div className="w-full max-w-[510px]">
+            <SearchInput
+              handleSearch={(e) => setQuery(e.target.value)}
+              query={query}
+              onSubmit={go}
+              placeholder={"Paste a wallet address"}
+            />
+          </div>
         </section>
       ) : (
         <section className="w-full max-w-2xl">
-          <p className="text-tertiary font-geist-sans font-medium text-2xl">
+          <p className="text-tertiary font-geist-sans font-medium text-base lg:text-2xl">
             Explore spot USDC distribution and token holder analytics across the
             Hyperliquid ecosystem
           </p>
