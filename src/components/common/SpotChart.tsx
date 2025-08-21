@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useMemo } from "react";
 import {
   ComposedChart,
   Area,
@@ -9,19 +9,115 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  Brush,
 } from "recharts";
 import type { HoldersTrendPoint } from "@/types";
 
 export interface SpotChartProps {
   data: HoldersTrendPoint[];
+  maxPoints?: number; // optional cap to thin dense datasets
 }
 
-const SpotChart: React.FC<SpotChartProps> = ({ data }) => {
+const SpotChart: React.FC<SpotChartProps> = ({ data, maxPoints = 150 }) => {
+  const thinned = useMemo(() => {
+    if (!Array.isArray(data)) return [] as HoldersTrendPoint[];
+    if (data.length <= maxPoints) return data;
+    const step = data.length / maxPoints;
+    const out: HoldersTrendPoint[] = [];
+    for (let i = 0; i < maxPoints; i++) {
+      out.push(data[Math.floor(i * step)]);
+    }
+    // always include the last point
+    if (out[out.length - 1] !== data[data.length - 1])
+      out.push(data[data.length - 1]);
+    return out;
+  }, [data, maxPoints]);
+
+  const fmtLeftAxis = (v: number) => `${Number(v).toFixed(1)}`; // values already in M
+  const fmtRightAxis = (v: number) =>
+    new Intl.NumberFormat().format(Math.round(Number(v) || 0));
+  const tooltipFormatter = (value: any, name: string) => {
+    const n = Number(value) || 0;
+    if (name === "spotUSDCM" || name === "hip2M")
+      return [
+        `$${n.toFixed(2)}M`,
+        name === "spotUSDCM" ? "Total Spot USDC" : "HIP-2 Amount",
+      ];
+    if (name === "holders") return [fmtRightAxis(n), "Holders"];
+    return [String(value), name];
+  };
+
+  // X-axis ticks: adaptive formatting using ts range
+  const tsValues = thinned
+    .map((d) => d.ts)
+    .filter((t): t is number => typeof t === "number" && Number.isFinite(t));
+  const hasTs = tsValues.length >= 2;
+  const minTs = hasTs ? Math.min(...tsValues) : undefined;
+  const maxTs = hasTs ? Math.max(...tsValues) : undefined;
+  const windowMs = hasTs ? maxTs! - minTs! : undefined;
+  const dayMs = 24 * 60 * 60 * 1000;
+  const windowDays = windowMs ? windowMs / dayMs : undefined;
+  const isIntraDay = !!windowMs && windowMs <= 2 * dayMs;
+  const is7D = !!windowDays && windowDays > 2 && windowDays <= 10;
+  const is30D = !!windowDays && windowDays > 10 && windowDays <= 45;
+  const is90D = !!windowDays && windowDays > 45;
+
+  const targetTicks = isIntraDay ? 8 : is7D ? 7 : is30D ? 10 : is90D ? 6 : 8;
+  const skipN = Math.max(1, Math.ceil((thinned.length || 1) / targetTicks));
+
+  const xTickFormatter = (value: any, index: number) => {
+    if (index % skipN !== 0) return "";
+    if (hasTs) {
+      const ts = typeof value === "number" ? value : thinned[index]?.ts;
+      if (!Number.isFinite(ts)) return "";
+      const d = new Date(Number(ts));
+      if (isIntraDay)
+        return d.toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      if (is90D) return d.toLocaleDateString(undefined, { month: "short" });
+      // 7D / 30D
+      return d.toLocaleDateString(undefined, {
+        month: "short",
+        day: "2-digit",
+      });
+    }
+    const label = thinned[index]?.date || "";
+    return is90D ? String(label).split(" ")[0] || label : label;
+  };
+  const xTickStyle =
+    isIntraDay || is7D || is30D || is90D
+      ? { fill: "#111827", fontSize: 10 }
+      : { fill: "#111827" };
+  const labelFormatter = (_label: any, payload: ReadonlyArray<any>) => {
+    const p = payload && payload[0] && payload[0].payload;
+    const ts = p?.ts as number | undefined;
+    if (typeof ts === "number" && Number.isFinite(ts)) {
+      if (isIntraDay) {
+        // show full date and time for intraday
+        return new Date(ts).toLocaleString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      return new Date(ts).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+      });
+    }
+    return p?.date ?? _label;
+  };
+
   return (
     <div className="h-[420px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
-          data={data}
+          data={thinned}
           margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
         >
           <defs>
@@ -32,10 +128,13 @@ const SpotChart: React.FC<SpotChartProps> = ({ data }) => {
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#EFEFEF" />
           <XAxis
-            dataKey="date"
-            tick={{ fill: "#111827" }}
+            dataKey={hasTs ? "ts" : "date"}
+            tick={xTickStyle}
             tickLine={false}
             axisLine={false}
+            interval="preserveStartEnd"
+            minTickGap={20}
+            tickFormatter={xTickFormatter}
           />
           {/* Left Y axis for amounts in M */}
           <YAxis
@@ -43,7 +142,7 @@ const SpotChart: React.FC<SpotChartProps> = ({ data }) => {
             tick={{ fill: "#111827" }}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(v) => `${v}`}
+            tickFormatter={fmtLeftAxis}
           />
           {/* Right Y axis for holders */}
           <YAxis
@@ -52,8 +151,12 @@ const SpotChart: React.FC<SpotChartProps> = ({ data }) => {
             tick={{ fill: "#10B981" }}
             tickLine={false}
             axisLine={false}
+            tickFormatter={fmtRightAxis}
           />
-          <Tooltip />
+          <Tooltip
+            formatter={tooltipFormatter}
+            labelFormatter={labelFormatter}
+          />
           {/* Area: Total Spot USDC (M) */}
           <Area
             yAxisId="left"
@@ -81,6 +184,14 @@ const SpotChart: React.FC<SpotChartProps> = ({ data }) => {
             strokeWidth={3}
             dot={{ r: 2 }}
           />
+          {thinned.length > 80 && (
+            <Brush
+              dataKey={hasTs ? "ts" : "date"}
+              height={16}
+              stroke="#D1D5DB"
+              travellerWidth={8}
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
       {/* Legend */}
