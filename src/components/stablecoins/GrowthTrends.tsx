@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -14,7 +14,7 @@ import {
 import { defaultData as defaultStablecoins } from "@/data";
 import type { StablecoinItem } from "@/types";
 
-type TrendPoint = { month: string; USDC: number; USDT: number; DAI: number };
+type TrendPoint = { date: string; USDC: number; USDT: number };
 
 export interface GrowthTrendsProps {
   trends?: TrendPoint[];
@@ -22,9 +22,9 @@ export interface GrowthTrendsProps {
 }
 
 const sampleTrends: TrendPoint[] = [
-  { month: "Jan", USDC: 350, USDT: 600, DAI: 950 },
-  { month: "Feb", USDC: 380, USDT: 650, DAI: 1000 },
-  { month: "Mar", USDC: 450, USDT: 700, DAI: 1180 },
+  { date: "Jan 01", USDC: 350, USDT: 600 },
+  { date: "Jan 02", USDC: 380, USDT: 650 },
+  { date: "Jan 03", USDC: 450, USDT: 700 },
 ];
 
 const GrowthTrends: React.FC<GrowthTrendsProps> = ({
@@ -32,10 +32,17 @@ const GrowthTrends: React.FC<GrowthTrendsProps> = ({
   distribution = defaultStablecoins,
 }) => {
   const colors = {
-    USDC: "#3B82F6", // blue
-    USDT: "#F59E0B", // amber-like to match screenshot
-    DAI: "#22C55E", // green
+    USDC: "#2775CA", // USDC brand
+    USDT: "#26A17B", // USDT brand
   } as const;
+
+  // Debug: print last few trend points (USDC/USDT)
+  useEffect(() => {
+    try {
+      const tail = (trends ?? []).slice(-5);
+      console.log("[ui][GrowthTrends][trends tail]", tail);
+    } catch {}
+  }, [trends]);
 
   return (
     <section className="grid grid-cols-1 font-geist-sans mt-12 gap-12 md:grid-cols-2">
@@ -50,7 +57,7 @@ const GrowthTrends: React.FC<GrowthTrendsProps> = ({
               margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
             >
               <XAxis
-                dataKey="month"
+                dataKey="date"
                 tick={{ fill: "#111827" }}
                 tickLine={false}
                 axisLine={false}
@@ -59,6 +66,15 @@ const GrowthTrends: React.FC<GrowthTrendsProps> = ({
                 tick={{ fill: "#111827" }}
                 tickLine={false}
                 axisLine={false}
+                tickFormatter={(v) => {
+                  const n = Number(v);
+                  if (!Number.isFinite(n)) return String(v);
+                  const abs = Math.abs(n);
+                  if (abs >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
+                  if (abs >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+                  if (abs >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+                  return `${n}`;
+                }}
               />
               <Tooltip cursor={{ stroke: "#E5E7EB" }} />
               <Line
@@ -75,25 +91,29 @@ const GrowthTrends: React.FC<GrowthTrendsProps> = ({
                 strokeWidth={3}
                 dot={{ r: 3, strokeWidth: 2 }}
               />
-              <Line
-                type="monotone"
-                dataKey="DAI"
-                stroke={colors.DAI}
-                strokeWidth={3}
-                dot={{ r: 3, strokeWidth: 2 }}
-              />
             </LineChart>
           </ResponsiveContainer>
         </div>
         <div className="mt-6 flex items-center justify-center gap-8">
-          <div className="flex items-center gap-2 text-[#22C55E]">
-            <span className="h-2 w-2 rounded-full bg-[#22C55E]" /> DAI
+          <div
+            className="flex items-center gap-2"
+            style={{ color: colors.USDT }}
+          >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: colors.USDT }}
+            />{" "}
+            USDT
           </div>
-          <div className="flex items-center gap-2 text-[#F59E0B]">
-            <span className="h-2 w-2 rounded-full bg-[#F59E0B]" /> USDT
-          </div>
-          <div className="flex items-center gap-2 text-[#3B82F6]">
-            <span className="h-2 w-2 rounded-full bg-[#3B82F6]" /> USDC
+          <div
+            className="flex items-center gap-2"
+            style={{ color: colors.USDC }}
+          >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: colors.USDC }}
+            />{" "}
+            USDC
           </div>
         </div>
       </div>
@@ -119,11 +139,12 @@ const GrowthTrends: React.FC<GrowthTrendsProps> = ({
                   <Cell
                     key={entry.symbol}
                     fill={
-                      entry.symbol === "USDC"
+                      entry.color ??
+                      (entry.symbol === "USDC"
                         ? colors.USDC
                         : entry.symbol === "USDT"
                         ? colors.USDT
-                        : colors.DAI
+                        : "#9CA3AF")
                     }
                   />
                 ))}
