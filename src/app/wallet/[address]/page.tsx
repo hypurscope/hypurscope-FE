@@ -62,7 +62,7 @@ export default async function WalletPage({ params }: Params) {
 
   const overviewData = [
     { label: "Account Value", key: "walletValue", value: accountValue },
-    { label: "Net Volume of Trade", key: "netVolume", value: netVolume },
+    { label: "Net Volume of Current Trade", key: "netVolume", value: netVolume },
     {
       label: "Withdrawable Balance",
       key: "withdrawableBalance",
@@ -71,31 +71,34 @@ export default async function WalletPage({ params }: Params) {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl py-8 space-y-6 flex flex-col items-center mt-5">
+    <div className="mx-auto max-w-6xl py-5 sm:py-8 space-y-6 flex flex-col items-center mt-4 sm:mt-5 md:px-0">
       <div className="space-y-1 font-geist-sans w-full">
-        <h1 className="text-2xl font-medium">Perpetuals Portfolio</h1>
-        <p className="text-tertiary">
+        <h1 className="text-xl sm:text-2xl font-medium tracking-tight">
+          Perpetuals Portfolio
+        </h1>
+        <p className="text-tertiary text-sm sm:text-base">
           Complete portfolio value and performance summary
         </p>
       </div>
 
-      <section className="grid grid-cols-1 gap-1 md:grid-cols-3 mt-8 mb-20 mx-auto justify-items-center w-full max-w-4xl">
+      <section className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mt-6 sm:mt-8 mb-12 md:mb-20 mx-auto w-full max-w-4xl">
         {overviewData.map((data) => (
           <MetricCard
             key={data.label}
             label={data.label}
             value={data.value}
-            fontSize="text-3xl"
+            fontSize="text-lg sm:text-2xl md:text-3xl"
+            className="w-full px-4 sm:px-6 md:px-[40px] py-3 sm:py-4 md:py-5"
           />
         ))}
       </section>
 
       <section className="w-full">
         <Tabs items={items} defaultValue={items[0].key} className="max-w-6xl" />
-        <hr className="border-t border-[#BAD2FF] mt-20 max-w-[1084px] mx-auto" />
+        <hr className="border-t border-[#BAD2FF] mt-12 md:mt-20 max-w-[1084px] mx-auto" />
       </section>
 
-      <section className="space-y-20 w-full mt-14">
+      <section className="space-y-14 md:space-y-20 w-full mt-10 md:mt-14">
         <SpotTokenHoldings address={address} />
         <StakingSummary />
         <DelegationSummary address={address} />

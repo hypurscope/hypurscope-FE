@@ -181,7 +181,7 @@ export default function TokenHolders() {
                 }
               />
               <MetricCard
-                label="Total Holders"
+                label="Top Holders (Limit)"
                 value={
                   summary.totalHolders != null
                     ? fmtInt(summary.totalHolders)
@@ -220,7 +220,8 @@ export default function TokenHolders() {
                   Amount
                 </th>
                 <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[20%]">
-                  % Share
+                  <span className="sm:hidden text-[9px] whitespace-nowrap">% (Top 2K)</span>
+                  <span className="hidden sm:inline">% Share (Top 2000)</span>
                 </th>
               </tr>
             </thead>
@@ -293,6 +294,12 @@ export default function TokenHolders() {
               )}
             </tbody>
           </table>
+          <div className="px-3 sm:px-5 py-2">
+            <p className="text-[10px] text-black/50">
+              * Percentages are based on the top 2000 holders returned by this
+              API (not the full on-chain holder set).
+            </p>
+          </div>
         </div>
         {query && totalPages > 1 && (
           <Pagination
