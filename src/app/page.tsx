@@ -7,24 +7,6 @@ import { MetricData } from "@/types";
 import LiveTVLMetric from "@/components/home/LiveTVLMetric";
 
 export default function Home() {
-  const defaultMetrics: MetricData[] = [
-    // {
-    //   label: "Supported assets",
-    //   value: "3",
-    //   change: undefined, // No change data
-    //   description: "USDC, USDT, DAI",
-    // },
-    {
-      label: "Protocols",
-      value: "3",
-      change: {
-        percentage: "+2%",
-        direction: "up",
-        period: "from last week",
-      },
-    },
-  ];
-
   const tabItems = [
     {
       key: "TVL",
@@ -44,18 +26,11 @@ export default function Home() {
   ];
   return (
     <div className="pt-10">
-      <section className="mx-40 justify-items-center grid grid-cols-2 gap-4">
-        <LiveTVLMetric className="max-w-[300px]" />
-        {defaultMetrics.map((metric, index) => (
-          <MetricsOverview
-            key={index}
-            metric={metric}
-            className="max-w-[300px]"
-          />
-        ))}
+      <section className="mx-4 md:mx-20 lg:mx-40 grid grid-cols-1 lg:grid-cols-2 gap-4 justify-items-center">
+        <LiveTVLMetric className="w-full lg:max-w-[300px]" />
       </section>
 
-      <section className="mt-10 mx-20">
+      <section className="mt-10   md:mx-12 lg:mx-20">
         <div>
           <Tabs items={tabItems} defaultValue={tabItems[0].key} />
         </div>

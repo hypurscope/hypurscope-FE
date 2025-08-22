@@ -1,14 +1,12 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import AreaChartComponent from "../common/AreaChart";
-import DateRangeTabs from "../common/DateRangeTabs";
+import DateRangeTabs, { DateRange } from "../common/DateRangeTabs";
 
 type ChartPoint = { date: string; value: number; displayValue: string };
 
 export default function TVLOverview() {
-  const [selectedRange, setSelectedRange] = useState<
-    "24h" | "7D" | "30D" | "90D"
-  >("7D");
+  const [selectedRange, setSelectedRange] = useState<DateRange>("7D");
   const [data, setData] = useState<ChartPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +18,16 @@ export default function TVLOverview() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`/api/tvl?range=${selectedRange}`, {
+        // Map UI ranges to API query values
+        const apiRange =
+          selectedRange === "3M"
+            ? "90D"
+            : selectedRange === "30D"
+            ? "30D"
+            : selectedRange === "6M"
+            ? "180D"
+            : selectedRange; // 24h / 7D
+        const res = await fetch(`/api/tvl?range=${apiRange}`, {
           signal: controller.signal,
         });
         if (!res.ok) throw new Error("Failed to load TVL");
@@ -44,25 +51,29 @@ export default function TVLOverview() {
 
   return (
     <section className="py-6 font-geist-sans">
-      <div className="flex items-center justify-between mb-16">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 md:gap-0 mb-8 md:mb-16">
         <div>
           <div>
-            <h3 className="text-2xl font-medium ">Total Value Locked</h3>
-            <p className="text-tertiary">
+            <h3 className="text-xl md:text-2xl font-medium">
+              Total Value Locked
+            </h3>
+            <p className="text-tertiary text-sm md:text-base">
               TVL across all protocols on Hyperliquid L1
             </p>
           </div>
-          <h2 className="font-semibold text-5xl mt-3">
+          <h2 className="font-semibold text-4xl md:text-5xl mt-3">
             {currentTVL?.displayValue ?? "—"}
           </h2>
         </div>
         <div>
-          <DateRangeTabs onChange={(range) => setSelectedRange(range)} />
+          <DateRangeTabs
+            onChange={(range: DateRange) => setSelectedRange(range)}
+          />
         </div>
       </div>
 
       {/* Chart Container */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className=" rounded-lg w-full   md:p-6">
         {error ? (
           <div className="text-sm text-red-500">{error}</div>
         ) : (
@@ -73,6 +84,7 @@ export default function TVLOverview() {
             gradient={true}
             showTooltip={true}
             className="w-full"
+            dateRange={selectedRange}
           />
         )}
       </div>

@@ -14,14 +14,18 @@ const MetricsOverview: React.FC<MetricsOverviewProps> = ({
 }) => {
   return (
     <div
-      className={`rounded-[10px] font-geist-sans text-black border-[0.5px] border-[#DFDFDF] px-12 py-5 flex flex-col justify-center gap-2 w-full ${className}`}
+      className={`rounded-[10px] font-geist-sans text-black border-[0.5px] border-[#DFDFDF] px-5 py-4 sm:px-8 md:px-12 md:py-5 flex flex-col justify-center gap-2 w-full ${className}`}
     >
-      <span className="font-medium w-fit">{metric.label}</span>
+      <span className="font-medium w-fit text-sm md:text-base">
+        {metric.label}
+      </span>
 
-      <h3 className="font-semibold text-3xl w-fit ">{metric.value}</h3>
+      <h3 className="font-semibold text-2xl md:text-3xl w-fit">
+        {metric.value}
+      </h3>
 
       {metric.change ? (
-        <div className="flex items-center w-fit gap-2">
+        <div className="flex items-center w-fit gap-2 text-xs md:text-sm">
           <span
             className={` flex items-center gap-1  ${
               metric.change.direction === "up"
