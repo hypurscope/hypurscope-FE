@@ -45,10 +45,10 @@ const Header = () => {
           />
         </Link>
 
-        <div className="flex items-center gap-2 font-medium text-lg text-tertiary">
+        <div className="flex items-center gap-2 font-medium text-base md:text-lg text-tertiary">
           <Link href="/dashboard">
             <button
-              className={`px-4 py-1.5 cursor-pointer ${
+              className={` px-2 py-0.5 md:px-4 md:py-1.5 cursor-pointer ${
                 isActive("/dashboard")
                   ? "border-b-2 border-b-black text-black"
                   : ""

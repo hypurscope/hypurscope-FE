@@ -1,9 +1,73 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Pagination } from "@/components/ui/pagination";
 import SearchInput from "../common/SearchInput";
 import MetricCard from "./MetricCard";
+
+// ---- Formatting helpers (hoisted so they're not recreated each render) ----
+const fmtInt = (n?: number) =>
+  new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
+    Math.round(Number(n) || 0)
+  );
+const fmtCompact = (n?: number) => {
+  const x = Number(n) || 0;
+  const abs = Math.abs(x);
+  const format = (v: number) => (v % 1 === 0 ? v.toFixed(0) : v.toFixed(2));
+  if (abs >= 1e12) return `${format(x / 1e12)}T`;
+  if (abs >= 1e9) return `${format(x / 1e9)}B`;
+  if (abs >= 1e6) return `${format(x / 1e6)}M`;
+  if (abs >= 1e3) return `${format(x / 1e3)}K`;
+  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(
+    x
+  );
+};
+const fmtDateOnly = (s?: string | null) => {
+  if (!s) return "—";
+  const parts = String(s)
+    .split(/[^0-9]/)
+    .filter(Boolean)
+    .map(Number);
+  if (parts.length >= 3) {
+    const [yy, mm, dd] = parts;
+    const y = yy < 100 ? 2000 + yy : yy;
+    const date = new Date(Date.UTC(y, Math.max(0, (mm || 1) - 1), dd || 1));
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    });
+  }
+  const d = new Date(s);
+  return Number.isNaN(d.getTime())
+    ? s
+    : d.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+      });
+};
+
+// Small hook for responsive breakpoint detection (no external dep)
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return; // SSR guard
+    const mql = window.matchMedia(query);
+    const onChange = () => setMatches(mql.matches);
+    onChange();
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, [query]);
+  return matches;
+}
+
+// Short helper to truncate addresses nicely
+const truncateAddress = (addr: string, lead = 6, tail = 4) => {
+  if (!addr) return addr;
+  if (addr.length <= lead + tail + 3) return addr;
+  return `${addr.slice(0, lead)}...${addr.slice(-tail)}`;
+};
 
 export default function TokenHolders() {
   const [query, setQuery] = useState(""); // token actually queried (empty until submit)
@@ -85,45 +149,7 @@ export default function TokenHolders() {
     setInput(next);
   };
 
-  const fmtInt = (n?: number) =>
-    new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
-      Math.round(Number(n) || 0)
-    );
-  const fmtCompact = (n?: number) => {
-    const x = Number(n) || 0;
-    const abs = Math.abs(x);
-    if (abs >= 1e12) return `${(x / 1e12).toFixed(2)}T`;
-    if (abs >= 1e9) return `${(x / 1e9).toFixed(2)}B`;
-    if (abs >= 1e6) return `${(x / 1e6).toFixed(2)}M`;
-    return new Intl.NumberFormat(undefined, {
-      maximumFractionDigits: 0,
-    }).format(x);
-  };
-  const fmtDateOnly = (s?: string | null) => {
-    if (!s) return "—";
-    const parts = String(s)
-      .split(/[^0-9]/)
-      .filter(Boolean)
-      .map(Number);
-    if (parts.length >= 3) {
-      const [yy, mm, dd] = parts;
-      const y = yy < 100 ? 2000 + yy : yy;
-      const date = new Date(Date.UTC(y, Math.max(0, (mm || 1) - 1), dd || 1));
-      return date.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-      });
-    }
-    const d = new Date(s);
-    return Number.isNaN(d.getTime())
-      ? s
-      : d.toLocaleDateString(undefined, {
-          year: "numeric",
-          month: "short",
-          day: "2-digit",
-        });
-  };
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   return (
     <div className="space-y-4 font-geist-sans mt-8">
@@ -179,43 +205,94 @@ export default function TokenHolders() {
         </div>
       </div>
 
-      <section className=" mt-14">
-        <div className="overflow-hidden rounded-2xl border border-[#DDE6FF] bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-[#EAF1FF] text-xs text-black/70">
+      <section className="mt-14">
+        <div className="rounded-2xl border border-[#DDE6FF] bg-white">
+          <table className="w-full table-fixed text-left text-[11px] sm:text-xs md:text-sm">
+            <thead className="bg-[#EAF1FF] text-[10px] sm:text-xs text-black/70">
               <tr>
-                <th className="px-5 py-3 font-medium">Rank</th>
-                <th className="px-5 py-3 font-medium">Address</th>
-                <th className="px-5 py-3 font-medium">Amount</th>
-                <th className="px-5 py-3 font-medium">Percentage (%)</th>
+                <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[46px]">
+                  Rank
+                </th>
+                <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[45%]">
+                  Address
+                </th>
+                <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[25%]">
+                  Amount
+                </th>
+                <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[20%]">
+                  % Share
+                </th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr
-                  key={`${r.rank}-${r.address}`}
-                  className="border-t border-[#EEF3FF]"
-                >
-                  <td className="px-5 py-4 text-black/70">#{r.rank}</td>
-                  <td className="px-5 py-4 font-mono">{r.address}</td>
-                  <td className="px-5 py-4">{r.amount.toLocaleString()}</td>
-                  <td className="px-5 py-4">{r.percentage.toFixed(2)}%</td>
-                </tr>
-              ))}
+              {rows.map((r) => {
+                const amountDisplay = fmtCompact(r.amount);
+                const pctDisplay =
+                  (isMobile
+                    ? r.percentage.toFixed(1)
+                    : r.percentage.toFixed(2)) + "%";
+                return (
+                  <tr
+                    key={`${r.rank}-${r.address}`}
+                    className="border-t border-[#EEF3FF]"
+                  >
+                    <td className="px-3 sm:px-5 py-3 text-black/70 align-middle">
+                      #{r.rank}
+                    </td>
+                    <td className="px-3 sm:px-5 py-3 font-mono align-middle overflow-hidden whitespace-nowrap truncate">
+                      {isMobile ? truncateAddress(r.address, 5, 4) : r.address}
+                    </td>
+                    <td className="px-3 sm:px-5 py-3 align-middle whitespace-nowrap">
+                      {amountDisplay}
+                    </td>
+                    <td className="px-3 sm:px-5 py-3 align-middle whitespace-nowrap">
+                      {pctDisplay}
+                    </td>
+                  </tr>
+                );
+              })}
               {rows.length === 0 && !loading && (
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-5 py-6 text-center text-black/50"
+                    className="px-3 sm:px-5 py-6 text-center text-black/50"
                   >
                     {query ? "No results" : "Enter a token symbol to search"}
                   </td>
                 </tr>
               )}
+              {loading &&
+                Array.from({ length: 8 }).map((_, i) => (
+                  <tr
+                    key={`skeleton-${i}`}
+                    className="border-t border-[#EEF3FF] animate-pulse"
+                  >
+                    <td className="px-3 sm:px-5 py-3">
+                      <div className="h-3 w-7 rounded bg-gray-200" />
+                    </td>
+                    <td className="px-3 sm:px-5 py-3">
+                      <div className="h-3 w-24 sm:w-40 rounded bg-gray-200" />
+                    </td>
+                    <td className="px-3 sm:px-5 py-3">
+                      <div className="h-3 w-14 sm:w-16 rounded bg-gray-200" />
+                    </td>
+                    <td className="px-3 sm:px-5 py-3">
+                      <div className="h-3 w-10 sm:w-12 rounded bg-gray-200" />
+                    </td>
+                  </tr>
+                ))}
+              {error && !loading && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-3 sm:px-5 py-6 text-center text-red-500"
+                  >
+                    {error}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
-          {loading && <div className="p-4 text-sm text-gray-500">Loading…</div>}
-          {error && <div className="p-4 text-sm text-red-500">{error}</div>}
         </div>
         {query && totalPages > 1 && (
           <Pagination
