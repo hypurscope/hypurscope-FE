@@ -86,7 +86,9 @@ export default function TradingHistory({ address }: TradingHistoryProps) {
           };
         });
         if (!cancelled) {
-          setRows(mapped);
+          // API provides trades in ascending order (oldest first). Reverse so newest appears first.
+          const ordered = [...mapped].reverse();
+          setRows(ordered);
           setPage(1);
         }
       } catch (e: any) {
@@ -147,7 +149,7 @@ export default function TradingHistory({ address }: TradingHistoryProps) {
   }, [rows]);
 
   return (
-    <section className="space-y-6 max-w-5xl w-full mx-auto mt-8 font-geist-sans">
+    <section className="space-y-6 max-w-6xl w-full mx-auto md:mt-8 font-geist-sans">
       <div>
         <h2 className="text-xl sm:text-2xl font-semibold">Trade History</h2>
       </div>

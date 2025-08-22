@@ -10,6 +10,7 @@ const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
   const params = useParams() as { address?: string }; // ← read dynamic param
+  const onDashboard = pathname.startsWith("/dashboard");
 
   // helper function for active state
   const isActive = (route: string) => pathname === route;
@@ -37,24 +38,25 @@ const Header = () => {
       <nav className="flex justify-between items-center font-geist-sans">
         <Link href="/">
           <Image
-            src="https://res.cloudinary.com/dhvwthnzq/image/upload/v1755094133/hyperscope/HyperScope_gze9aw.svg"
+            src="https://res.cloudinary.com/dhvwthnzq/image/upload/v1755898415/hyperscope/Logo_v4tprv.svg"
             alt="Logo"
-            className="h-5 lg:h-10 w-40 lg:w-fit object-cover"
-            width={100}
-            height={200}
+            className="h-5 lg:h-8  lg:block w-fit object-contain"
+            width={200}
+            height={100}
           />
+          {/* <Image
+              src={"https://res.cloudinary.com/dhvwthnzq/image/upload/v1755899498/hyperscope/Group_18_aponxv.svg"}
+              alt="logo"
+              className="h-8 lg:hidden w-40 object-cover"
+              width={200}
+              height={100}
+          /> */}
         </Link>
 
         <div className="flex items-center gap-2 font-medium text-base md:text-lg text-tertiary">
-          <Link href="/dashboard">
-            <button
-              className={` px-2 py-0.5 md:px-4 md:py-1.5 cursor-pointer ${
-                isActive("/dashboard")
-                  ? "border-b-2 border-b-black text-black"
-                  : ""
-              }`}
-            >
-              Dashboard
+          <Link href={onDashboard ? "/" : "/dashboard"}>
+            <button className="px-3 py-1 md:px-3 md:py-1.5 text-[11px] md:text-base rounded-[8px] md:rounded-[10px] font-medium cursor-pointer text-white bg-[#1969FE]">
+              {onDashboard ? "Home" : "Go to Dashboard"}
             </button>
           </Link>
         </div>

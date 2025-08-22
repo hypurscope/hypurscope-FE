@@ -42,7 +42,7 @@ const SearchInput = ({
       <button
         aria-label="Search"
         onClick={() => onSubmit?.(query.trim())}
-        className="bg-[#1969FE] w-10 h-10 md:w-8 md:h-8 m-2 md:m-2.5 flex justify-center items-center p-2 rounded-sm"
+        className="bg-[#1969FE] w-7 h-7 md:w-8 md:h-8 m-2 md:m-2.5 flex justify-center items-center p-2 rounded-sm"
       >
         <Search className="text-white h-5 w-5 md:h-4 md:w-4" />
       </button>

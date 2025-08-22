@@ -11,6 +11,7 @@ type Row = {
   balance: string; // compact amount, no commas
   value: string; // USD compact
   allocation: string; // percent with %
+  currentValue: string; // computed current USD value or N/A
 };
 
 // Responsive media query hook (mirrors approach in TokenHolders)
@@ -52,10 +53,24 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
         // Compute USD values and allocations
         const detailed = holdings.map((h) => {
           const coin = String(h?.coin ?? "-");
-          const total = Number(h?.total ?? 0); // quantity
-          const entry = Number(h?.entry ?? 0); // USD price per unit
-          const usd = total * entry;
-          return { coin, total, entry, usd };
+          const total = Number(h?.total ?? 0); // quantity (balance)
+          const entry = Number(h?.entry ?? 0); // USD price at entry per unit
+          const priceNow =
+            h?.value_in_usd !== undefined ? Number(h?.value_in_usd) : undefined; // current unit price if provided
+          const usd = total * entry; // value at entry
+          // Current value rules:
+          // 1. If token is USDC -> balance * 1
+          // 2. Else if value_in_usd present -> balance * value_in_usd
+          // 3. Else -> N/A
+          let currentValue: string;
+          if (coin.toUpperCase() === "USDC") {
+            currentValue = formatUSDCompact(total * 1, 2);
+          } else if (priceNow !== undefined && isFinite(priceNow)) {
+            currentValue = formatUSDCompact(total * priceNow, 2);
+          } else {
+            currentValue = "N/A";
+          }
+          return { coin, total, entry, usd, currentValue };
         });
         const sumUSD =
           detailed.reduce((acc, d) => acc + (isFinite(d.usd) ? d.usd : 0), 0) ||
@@ -67,6 +82,7 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
             balance: formatNumberCompact(d.total, 2),
             value: formatUSDCompact(d.usd, 2),
             allocation: `${pct.toFixed(2)}%`,
+            currentValue: d.currentValue,
           };
         });
         if (!cancelled) {
@@ -123,7 +139,7 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
   }, [rows]);
 
   return (
-    <section className="space-y-5 font-geist-sans max-w-5xl w-full mx-auto">
+    <section className="space-y-5 font-geist-sans max-w-6xl w-full mx-auto">
       <div>
         <h2 className="text-xl sm:text-2xl font-semibold">
           Spot Token Holdings
@@ -148,12 +164,12 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
               <>
                 <MetricCard label="Tokens" value={String(metrics.count)} />
                 <MetricCard
-                  label="Total Value"
+                  label="Total Value at Entry"
                   value={formatUSDCompact(metrics.totalValue, 2)}
                 />
-                <MetricCard label="Top Token" value={metrics.topToken} />
+                <MetricCard label="Top Token Entry" value={metrics.topToken} />
                 <MetricCard
-                  label="Top Value"
+                  label="Top Value at Entry"
                   value={formatUSDCompact(metrics.topValue, 2)}
                 />
               </>
@@ -171,10 +187,13 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
                 Balance
               </th>
               <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[22%] sm:w-[22%] md:w-[26%]">
-                Value
+                Value at Entry
               </th>
               <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[12%] sm:w-[20%] md:w-[20%]">
                 Alloc
+              </th>
+              <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[12%] sm:w-[20%] md:w-[20%]">
+                Current Value
               </th>
             </tr>
           </thead>
@@ -212,13 +231,19 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
                   >
                     {allocationDisplay}
                   </td>
+                  <td
+                    className="px-3 sm:px-5 py-3 align-middle whitespace-nowrap"
+                    title={r.currentValue}
+                  >
+                    {r.currentValue}
+                  </td>
                 </tr>
               );
             })}
             {paged.length === 0 && !loading && !error && (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="px-3 sm:px-5 py-6 text-center text-black/50 text-xs sm:text-sm"
                 >
                   No holdings
@@ -244,12 +269,15 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
                   <td className="px-3 sm:px-5 py-3">
                     <div className="h-3 w-10 bg-gray-200 rounded" />
                   </td>
+                  <td className="px-3 sm:px-5 py-3">
+                    <div className="h-3 w-12 bg-gray-200 rounded" />
+                  </td>
                 </tr>
               ))}
             {error && !loading && (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="px-3 sm:px-5 py-6 text-center text-red-500 text-xs sm:text-sm"
                 >
                   {error}

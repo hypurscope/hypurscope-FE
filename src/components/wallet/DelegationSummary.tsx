@@ -88,7 +88,7 @@ export default function DelegationSummary({ address }: DelegationSummaryProps) {
   const isMobile = useMediaQuery("(max-width: 640px)");
 
   return (
-    <section className="space-y-6 font-geist-sans max-w-5xl w-full mx-auto">
+    <section className="space-y-6 font-geist-sans max-w-6xl w-full mx-auto">
       <div>
         <h2 className="text-xl sm:text-2xl font-semibold">
           Delegation Summary
