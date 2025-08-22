@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import SpotChart from "@/components/common/SpotChart";
 import MetricCard from "./MetricCard";
 import type { HoldersTrendPoint } from "@/types";
-import DateRangeTabs from "@/components/common/DateRangeTabs";
+import DateRangeTabs, { DateRange } from "@/components/common/DateRangeTabs";
 
 type ApiItem = {
   lastUpdate: number; // unix seconds
@@ -47,7 +47,7 @@ const USDCSpotHolders: React.FC = () => {
     };
   }, []);
 
-  const [range, setRange] = useState<"24h" | "7D" | "30D" | "90D">("7D");
+  const [range, setRange] = useState<DateRange>("7D");
 
   const chartData: HoldersTrendPoint[] = useMemo(() => {
     if (!raw) return [];
@@ -76,7 +76,9 @@ const USDCSpotHolders: React.FC = () => {
         ? 7 * dayMs
         : range === "30D"
         ? 30 * dayMs
-        : 90 * dayMs;
+        : range === "3M"
+        ? 90 * dayMs
+        : 180 * dayMs; // 6M
     const threshold = maxTs - windowMs;
     const sliced = all.filter((p) => (p.ts ?? 0) >= threshold);
     return sliced.length > 0 ? sliced : all.slice(-1);
@@ -101,14 +103,14 @@ const USDCSpotHolders: React.FC = () => {
   }, [raw]);
 
   return (
-    <section className="space-y-8 font-geist-sans flex flex-col items-center mt-8 ">
+    <section className="space-y-8 font-geist-sans flex flex-col items-center mt-8  md:px-0 w-full">
       {/* Metrics */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 w-full max-w-5xl ">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 w-full max-w-5xl">
         {loading || !metrics
           ? Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-[10px] min-w-[200px] border border-[#DFDFDF] bg-white py-5 px-[40px] w-fit"
+                className="rounded-[10px] min-w-[140px] sm:min-w-[170px] md:min-w-[200px] border border-[#DFDFDF] bg-white py-4 md:py-5 px-4 md:px-[40px] w-full"
               >
                 <div className="h-4 w-24 bg-gray-200 rounded mb-2" />
                 <div className="h-6 w-28 bg-gray-200 rounded" />
@@ -120,20 +122,24 @@ const USDCSpotHolders: React.FC = () => {
       </div>
 
       {/* Title */}
-      <section className="max-w-[1137px] mt-8  w-full flex flex-col ">
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-2xl font-semibold text-black">
+      <section className="max-w-[1137px] mt-4 md:mt-8 w-full flex flex-col">
+        <div className="mb-4 md:mb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h3 className="text-xl md:text-2xl font-semibold text-black">
             Spot USDC Trends
           </h3>
-          <DateRangeTabs onChange={(r) => setRange(r)} />
+          <div className="sm:self-end">
+            <DateRangeTabs onChange={(r) => setRange(r)} />
+          </div>
         </div>
-        <p className="text-[#9CA3AF] text-base font-regular mb-10">
+        <p className="text-[#9CA3AF] text-sm md:text-base font-regular mb-6 md:mb-10">
           Historical data showing total USDC, holder count, and HIP-2
           distribution
         </p>
 
         {/* Chart */}
-        <SpotChart data={chartData} />
+        <div className="w-full overflow-x-auto md:overflow-visible">
+          <SpotChart data={chartData} />
+        </div>
         {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
       </section>
     </section>
