@@ -40,7 +40,7 @@ export default function StakingSummary({
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+      {/* <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
         {metrics.map((m) => (
           <div key={m.label} className="space-y-1">
             <div className="text-xs text-black/50">{m.label}</div>
@@ -52,7 +52,7 @@ export default function StakingSummary({
             </div>
           </div>
         ))}
-      </div>
+      </div> */}
 
       <div className="overflow-hidden rounded-2xl border border-[#DDE6FF] bg-white">
         <table className="w-full text-left text-sm">

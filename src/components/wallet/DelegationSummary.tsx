@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { formatNumberCompact } from "@/lib/utils";
+import MetricCard from "@/components/dashboard/MetricCard";
 
 type DelegationSummaryProps = { address: string };
 
@@ -9,6 +10,20 @@ type Row = {
   amount: string; // compact, no commas
   lockedUntil: string; // date string
 };
+
+// Lightweight media query hook (parity with TokenHolders)
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia(query);
+    const handler = () => setMatches(mql.matches);
+    handler();
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, [query]);
+  return matches;
+}
 
 export default function DelegationSummary({ address }: DelegationSummaryProps) {
   const [rows, setRows] = useState<Row[]>([]);
@@ -70,57 +85,120 @@ export default function DelegationSummary({ address }: DelegationSummaryProps) {
   );
   const activeValidators = rows.length.toString();
 
+  const isMobile = useMediaQuery("(max-width: 640px)");
+
   return (
-    <section className="space-y-5 font-geist-sans">
+    <section className="space-y-6 font-geist-sans max-w-5xl w-full mx-auto">
       <div>
-        <h2 className="text-xl font-semibold">Delegation Summary</h2>
-        <p className="text-sm text-black/50">Your current delegations</p>
+        <h2 className="text-xl sm:text-2xl font-semibold">
+          Delegation Summary
+        </h2>
+        <p className="text-xs sm:text-sm text-black/50">
+          Your current delegations
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-        <div className="space-y-1">
-          <div className="text-xs text-black/50">Total Delegated</div>
-          <div className="text-base font-medium">{totalDelegated}</div>
-        </div>
-        <div className="space-y-1">
-          <div className="text-xs text-black/50">Active Validators</div>
-          <div className="text-base font-medium">{activeValidators}</div>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+        {loading && !rows.length ? (
+          Array.from({ length: 2 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-[10px] min-w-[120px] border border-[#DFDFDF] bg-white py-4 px-4 flex flex-col gap-1 animate-pulse"
+            >
+              <div className="h-3 w-16 bg-gray-200 rounded" />
+              <div className="h-5 w-20 bg-gray-200 rounded" />
+            </div>
+          ))
+        ) : (
+          <>
+            <MetricCard label="Total Delegated" value={totalDelegated} />
+            <MetricCard label="Active Validators" value={activeValidators} />
+          </>
+        )}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-[#DDE6FF] bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-[#EAF1FF] text-[12px] text-black/70">
+      <div className="rounded-2xl border border-[#DDE6FF] bg-white overflow-x-auto">
+        <table className="w-full table-fixed text-left text-[11px] sm:text-xs md:text-sm">
+          <thead className="bg-[#EAF1FF] text-[10px] sm:text-xs text-black/70">
             <tr>
-              <th className="px-5 py-3 font-medium">Validator</th>
-              <th className="px-5 py-3 font-medium">Amount</th>
-              <th className="px-5 py-3 font-medium">Locked Until</th>
+              <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[40%] sm:w-[38%] md:w-[40%]">
+                Validator
+              </th>
+              <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[30%] sm:w-[30%] md:w-[30%]">
+                Amount
+              </th>
+              <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[30%] sm:w-[32%] md:w-[30%]">
+                <span className="sm:hidden">Locked</span>
+                <span className="hidden sm:inline">Locked Until</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr
                 key={r.validator + r.lockedUntil}
-                className="border-t border-[#EEF3FF]"
+                className="border-t border-[#EEF3FF] text-[10px] sm:text-[11px] md:text-sm"
               >
-                <td className="px-5 py-4 font-mono text-[12px]">
+                <td
+                  className="px-3 sm:px-5 py-3 font-mono align-middle whitespace-nowrap overflow-hidden truncate"
+                  title={r.validator}
+                >
                   {r.validator}
                 </td>
-                <td className="px-5 py-4">{r.amount}</td>
-                <td className="px-5 py-4">{r.lockedUntil}</td>
+                <td
+                  className="px-3 sm:px-5 py-3 align-middle whitespace-nowrap"
+                  title={r.amount}
+                >
+                  {r.amount}
+                </td>
+                <td
+                  className="px-3 sm:px-5 py-3 align-middle whitespace-nowrap"
+                  title={r.lockedUntil}
+                >
+                  {r.lockedUntil}
+                </td>
               </tr>
             ))}
-            {rows.length === 0 && !loading && (
+            {rows.length === 0 && !loading && !error && (
               <tr>
-                <td className="px-5 py-6 text-center text-black/50" colSpan={3}>
+                <td
+                  colSpan={3}
+                  className="px-3 sm:px-5 py-6 text-center text-black/50 text-xs sm:text-sm"
+                >
                   No delegations
+                </td>
+              </tr>
+            )}
+            {loading &&
+              !rows.length &&
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr
+                  key={`sk-${i}`}
+                  className="border-t border-[#EEF3FF] animate-pulse"
+                >
+                  <td className="px-3 sm:px-5 py-3">
+                    <div className="h-3 w-28 bg-gray-200 rounded" />
+                  </td>
+                  <td className="px-3 sm:px-5 py-3">
+                    <div className="h-3 w-16 bg-gray-200 rounded" />
+                  </td>
+                  <td className="px-3 sm:px-5 py-3">
+                    <div className="h-3 w-20 bg-gray-200 rounded" />
+                  </td>
+                </tr>
+              ))}
+            {error && !loading && (
+              <tr>
+                <td
+                  colSpan={3}
+                  className="px-3 sm:px-5 py-6 text-center text-red-500 text-xs sm:text-sm"
+                >
+                  {error}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-        {loading && <div className="p-4 text-sm text-gray-500">Loading…</div>}
-        {error && <div className="p-4 text-sm text-red-500">{error}</div>}
       </div>
     </section>
   );
