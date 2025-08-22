@@ -148,6 +148,14 @@ const SpotChart: React.FC<SpotChartProps> = ({ data, maxPoints = 150 }) => {
                 <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.35} />
                 <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.06} />
               </linearGradient>
+              <linearGradient id="hip2Area" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.06} />
+              </linearGradient>
+              <linearGradient id="holdersArea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#22C55E" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="#22C55E" stopOpacity={0.06} />
+              </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#EFEFEF" />
             <XAxis
@@ -194,23 +202,24 @@ const SpotChart: React.FC<SpotChartProps> = ({ data, maxPoints = 150 }) => {
               fill="url(#spotArea)"
               strokeWidth={2}
             />
-            {/* Line: HIP-2 amount (M) */}
-            <Line
+            {/* Area: HIP-2 amount (M) */}
+            <Area
               yAxisId="left"
               type="monotone"
               dataKey="hip2M"
               stroke="#F59E0B"
-              strokeWidth={3}
-              dot={{ r: 2 }}
+              fill="url(#hip2Area)"
+              strokeWidth={2}
             />
-            {/* Line: Number of holders */}
-            <Line
+            {/* Area: Number of holders */}
+            <Area
               yAxisId="right"
               type="monotone"
               dataKey="holders"
               stroke="#22C55E"
-              strokeWidth={3}
-              dot={{ r: 2 }}
+              fill="url(#holdersArea)"
+              strokeWidth={2}
+              // dot={{ r: 2 }}
             />
             {thinned.length > 80 && !isSmall && (
               <Brush
