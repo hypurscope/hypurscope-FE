@@ -40,7 +40,7 @@ const Header = () => {
           <Image
             src="https://res.cloudinary.com/dhvwthnzq/image/upload/v1755955314/hyperscope/Frame_247_zlamyk.png"
             alt="Logo"
-            className="h-8  lg:block w-fit object-contain"
+            className="h-8 lg:h-10 lg:block w-fit object-contain"
             width={300}
             height={100}
           />
