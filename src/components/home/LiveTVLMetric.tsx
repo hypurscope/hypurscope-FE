@@ -68,7 +68,11 @@ export default function LiveTVLMetric({
           setLoading(false);
         }
       } catch (e) {
-        if (!cancelled) setLoading(false);
+        if (!cancelled){
+          setLoading(false);
+          console.error(e)
+        }
+        ;
       }
     })();
     return () => {

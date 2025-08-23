@@ -128,7 +128,6 @@ const SpotChart: React.FC<SpotChartProps> = ({ data, maxPoints = 150 }) => {
     return () => window.removeEventListener("resize", update);
   }, []);
   const isSmall = (vw ?? 1024) < 640;
-  const isTablet = !isSmall && (vw ?? 1024) < 768;
 
   const leftTickFont = isSmall ? 10 : 12;
   const rightTickFont = isSmall ? 9 : 11;

@@ -104,7 +104,6 @@ export default function TradingHistory({ address }: TradingHistoryProps) {
   }, [address]);
 
   const isMobile = useMediaQuery("(max-width: 640px)");
-  const isTablet = useMediaQuery("(max-width: 900px)");
 
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const paged = useMemo(() => {

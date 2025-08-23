@@ -108,7 +108,7 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
   }, [rows, page]);
 
   const isMobile = useMediaQuery("(max-width: 640px)");
-  const isTablet = useMediaQuery("(max-width: 900px)");
+
 
   // Aggregated metrics
   type Metrics = {
