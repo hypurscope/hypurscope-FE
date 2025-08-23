@@ -1,36 +1,142 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HypurScope
 
-## Getting Started
+Real‑time insights into HyperEVM & HyperCore data layers (TVL, stablecoins, wallet positions) built with Next.js App Router.
 
-First, run the development server:
+## Tech Stack
+- Next.js 15 (App Router, Server & Client Components) ([src/app/layout.tsx](src/app/layout.tsx))
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- Recharts (metrics visualization)
+- Framer Motion (UI motion)
+- Heroicons / Lucide (icons)
 
+## Quick Start
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# visit http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Build & run production:
+```bash
+npm run build
+npm start
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Lint:
+```bash
+npm run lint
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
+- dev: Local development (hot reload)
+- build: Production compile (Next.js + SWC)
+- start: Run compiled output
+- lint: ESLint (Next config + TypeScript rules)
 
-## Learn More
+## Project Structure (high level)
+```
+src/
+  app/
+    api/
+      tvl/route.ts
+      spot-info/route.ts
+      stablecoins/route.ts
+      holders/route.ts
+      user-info/[address]/route.ts
+    (pages & layouts)
+  components/
+    common/        # Shared UI (Tabs, metrics cards, etc.)
+    home/          # Home dashboard components
+    wallet/        # Wallet / address related UI (positions, holdings, etc.)
+  types/           # Shared TypeScript types
+  styles/          # (Tailwind + globals)
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Data Layer & Caching
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Each API route wraps an upstream service and normalizes data for charts/UI:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Route | File | Purpose | Caching |
+|-------|------|---------|---------|
+| /api/tvl | [src/app/api/tvl/route.ts](src/app/api/tvl/route.ts) | Aggregated TVL time series | `export const revalidate = 300` (5m) |
+| /api/spot-info | [src/app/api/spot-info/route.ts](src/app/api/spot-info/route.ts) | Spot / market info | (check file for revalidate) |
+| /api/stablecoins | [src/app/api/stablecoins/route.ts](src/app/api/stablecoins/route.ts) | Stablecoin metrics | (check file) |
+| /api/holders | [src/app/api/holders/route.ts](src/app/api/holders/route.ts) | Holder stats | (check file) |
+| /api/user-info/[address] | [src/app/api/user-info/[address]/route.ts](src/app/api/user-info/[address]/route.ts) | Wallet summary (positions, balances) | `revalidate = 60` (example) |
 
-## Deploy on Vercel
+(Adjust table if caching values differ.)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Fresh vs Cached Fetches
+- Server Components default to cached fetch unless `cache: 'no-store'` or `revalidate: 0`.
+- Short revalidation (e.g. 30–60s) keeps UI snappy while limiting upstream load.
+- For a manual fresh snapshot (user pressed Refresh / new search of same address):
+  ```ts
+  fetch(`/api/user-info/${address}?t=${Date.now()}`, { cache: 'no-store' })
+  ```
+  The `t` param busts CDN key; `cache: 'no-store'` skips Next data cache.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### When NOT to Add Global State
+Most data is server‑fetched & streamed; avoid a global client store until:
+- Multiple client components need the same rapidly changing (websocket) state.
+- You add user preferences (theme, currency) you want to persist.
+
+If needed later: introduce a lightweight store (e.g. Zustand) only for UI prefs or wallet connection metadata.
+
+## UI / Components
+- Tabs & metric overview cards compose server-provided datasets.
+- Charts: Built with Recharts; values pre‑formatted server-side (e.g. displayValue) to keep client logic minimal.
+
+## Formatting & Utilities
+Helper functions (see API routes) sanitize numeric strings, compress large numbers (K/M/B/T), and parse loose date formats into UTC timestamps.
+
+## Environment Variables (TBD)
+List required variables here (e.g. UPSTREAM_API_URL, RPC_URL, etc.)
+```
+# .env.example (create)
+# NEXT_PUBLIC_... variables if needed client-side
+```
+
+## Adding a New Metric Endpoint
+1. Create `src/app/api/<metric>/route.ts`.
+2. Fetch upstream with desired caching:
+   ```ts
+   export const revalidate = 120;
+   export async function GET() { /* normalize & return JSON */ }
+   ```
+3. Build a Server Component (preferred) that calls the route.
+4. Add a tab / card referencing the new component.
+
+## Performance Notes
+- Prefer server aggregation to reduce client bundle size.
+- Keep chart payload lean: strip unused fields, pre-format labels.
+- Use `cache: 'no-store'` only on explicit user actions; otherwise rely on `revalidate` windows.
+
+## Testing (TBD)
+Add a section if unit / integration tests are introduced.
+
+## Deployment
+- Optimized for Vercel (edge-aware caching via `revalidate`).
+- Ensure any upstream domains are allowed (if using fetch on edge).
+- Monitor function logs for upstream timeout or rate issues.
+
+## Roadmap (Example)
+- [ ] Manual Refresh buttons for wallet sub-sections
+- [ ] Interval auto-refresh (30–60s) toggle
+- [ ] Address search history (localStorage)
+- [ ] Protocol breakdown (enable commented tab)
+- [ ] Dark mode & user prefs persistence
+- [ ] Websocket layer for live TVL tick
+
+## Contributing
+1. Fork / clone
+2. Create feature branch
+3. Conventional commits (optional)
+4. PR with concise description & screenshots (if UI)
+
+## License
+TBD 
+
+---
+Generated scaffold; refine descriptions & fill TBD sections
