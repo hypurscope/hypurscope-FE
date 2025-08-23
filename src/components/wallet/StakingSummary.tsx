@@ -1,78 +1,157 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
+import { formatNumberCompact } from "@/lib/utils";
 
-const GREEN = "#25AD32";
+type ApiSummary = Record<string, number | string | null | undefined>;
 
-type Metric = { label: string; value: string; highlight?: boolean };
+interface StakingSummaryProps {
+  address: string;
+}
 
-type Row = { validator: string; staked: string; apr: string; rewards: string };
+export default function StakingSummary({ address }: StakingSummaryProps) {
+  const [title, setTitle] = useState("Staking Summary");
+  const [summary, setSummary] = useState<ApiSummary | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-const defaultMetrics: Metric[] = [
-  { label: "Total Staked", value: "$125,000" },
-  { label: "Available Balance", value: "$10,000" },
-  { label: "Active Validators", value: "3" },
-  { label: "Average APR", value: "8.5%", highlight: true },
-];
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch(
+          `/api/user-info/${address}?start_time=${encodeURIComponent(
+            "2000-01-01 00:00"
+          )}`
+        );
+        if (!res.ok) throw new Error("Failed to load staking summary");
+        const data = await res.json();
+        const root = data?.staking_summary || {};
+        console.log(root);
+        const topKeys = Object.keys(root);
+        console.log(topKeys);
+        if (topKeys.length) {
+          const k = topKeys[0];
+          const obj = root[k];
+          console.log(obj);
 
-const defaultRows: Row[] = [
-  { validator: "ValiDAO", staked: "$25,000", apr: "8.2%", rewards: "$1,850" },
-  { validator: "B-Harvest", staked: "$15,000", apr: "8.7%", rewards: "$1,200" },
-  {
-    validator: "Purpurposeful",
-    staked: "$12,000",
-    apr: "8.9%",
-    rewards: "$800",
-  },
-];
+          if (!cancelled && obj && typeof obj === "object") {
+            setTitle(k || "Staking Summary");
+            setSummary(obj as ApiSummary);
+          }
+        } else if (!cancelled) {
+          setSummary(null);
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || "Error");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
 
-export default function StakingSummary({
-  metrics = defaultMetrics,
-  rows = defaultRows,
-}: {
-  metrics?: Metric[];
-  rows?: Row[];
-}) {
+  const entries = summary
+    ? Object.entries(summary).map(([k, v]) => ({
+        key: k,
+        value:
+          typeof v === "number"
+            ? formatNumberCompact(v, 6)
+            : (v ?? "-").toString() || "-",
+      }))
+    : [];
+
+  const colSpan = Math.max(entries.length, 1);
+
+  // Produce a shortened mobile-friendly label for long phrases
+  const shortLabel = (label: string) => {
+    const l = label.toLowerCase();
+    return l
+      .replace(/number/g, "no.")
+      .replace(/total/g, "tot.")
+      .replace(/pending/g, "pend.")
+      .replace(/withdrawals/g, "wds")
+      .replace(/withdrawal/g, "wd")
+      .replace(/undelegated/g, "undeleg.")
+      .replace(/delegated/g, "deleg.")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
   return (
-    <section className="space-y-5 font-geist-sans">
+    <section className="space-y-5 font-geist-sans max-w-6xl w-full mx-auto">
       <div>
-        <h2 className="text-xl font-semibold">Staking Summary</h2>
-        <p className="text-sm text-black/50">
-          Validator staking positions and rewards
+        <h2 className="text-xl sm:text-2xl font-semibold">{title}</h2>
+        <p className="text-xs sm:text-sm text-black/50">
+          On-chain staking status
         </p>
       </div>
 
-      {/* <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-        {metrics.map((m) => (
-          <div key={m.label} className="space-y-1">
-            <div className="text-xs text-black/50">{m.label}</div>
-            <div
-              className="text-base font-medium"
-              style={m.highlight ? { color: GREEN } : undefined}
-            >
-              {m.value}
-            </div>
-          </div>
-        ))}
-      </div> */}
-
-      <div className="overflow-hidden rounded-2xl border border-[#DDE6FF] bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-[#EAF1FF] text-[12px] text-black/70">
+      <div className="rounded-2xl border border-[#DDE6FF] bg-white overflow-x-auto">
+        <table className="w-full table-fixed text-left text-[11px] sm:text-xs md:text-sm">
+          <thead className="bg-[#EAF1FF] w-full text-[9px] sm:text-xs text-black/70">
             <tr>
-              <th className="px-5 py-3 font-medium">Validator</th>
-              <th className="px-5 py-3 font-medium">Staked Amount</th>
-              <th className="px-5 py-3 font-medium">APR</th>
-              <th className="px-5 py-3 font-medium">Rewards</th>
+              {entries.map((e) => (
+                <th
+                  key={e.key}
+                  className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 font-medium whitespace-nowrap"
+                >
+                  <span className="sm:hidden capitalize">
+                    {shortLabel(e.key)}
+                  </span>
+                  <span className="hidden sm:inline">{e.key}</span>
+                </th>
+              ))}
+              {!entries.length && (
+                <th className="px-3 py-2 font-medium">Summary</th>
+              )}
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.validator} className="border-t border-[#EEF3FF]">
-                <td className="px-5 py-4">{r.validator}</td>
-                <td className="px-5 py-4">{r.staked}</td>
-                <td className="px-5 py-4">{r.apr}</td>
-                <td className="px-5 py-4">{r.rewards}</td>
+            {loading && (
+              <tr className="animate-pulse">
+                <td
+                  colSpan={colSpan}
+                  className="px-3 sm:px-5 py-6 text-center text-black/40"
+                >
+                  Loading…
+                </td>
               </tr>
-            ))}
+            )}
+            {!loading && error && (
+              <tr>
+                <td
+                  colSpan={colSpan}
+                  className="px-3 sm:px-5 py-6 text-center text-red-500 text-xs sm:text-sm"
+                >
+                  {error}
+                </td>
+              </tr>
+            )}
+            {!loading && !error && entries.length > 0 && (
+              <tr className="border-t border-[#EEF3FF]">
+                {entries.map((e) => (
+                  <td
+                    key={e.key}
+                    className="text-[10px] sm:text-[15px] px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 whitespace-nowrap"
+                  >
+                    {e.value}
+                  </td>
+                ))}
+              </tr>
+            )}
+            {!loading && !error && entries.length === 0 && (
+              <tr>
+                <td
+                  colSpan={colSpan}
+                  className="px-3 sm:px-5 py-6 text-center text-black/50 text-xs sm:text-sm"
+                >
+                  No staking data
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

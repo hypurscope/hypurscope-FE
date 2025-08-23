@@ -178,21 +178,21 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
 
       <div className="rounded-2xl border border-[#DDE6FF] bg-white overflow-x-auto">
         <table className="w-full table-fixed text-left text-[11px] sm:text-xs md:text-sm">
-          <thead className="bg-[#EAF1FF] text-[10px] sm:text-xs text-black/70">
+          <thead className="bg-[#EAF1FF] w-full text-[9px] sm:text-xs text-black/70">
             <tr>
-              <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[38%] sm:w-[34%] md:w-[30%]">
+              <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[18%] sm:w-[34%] md:w-[30%]">
                 Token
               </th>
-              <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[28%] sm:w-[24%] md:w-[24%]">
+              <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[14%] sm:w-[24%] md:w-[24%]">
                 Balance
               </th>
               <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[22%] sm:w-[22%] md:w-[26%]">
                 Value at Entry
               </th>
-              <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[12%] sm:w-[20%] md:w-[20%]">
+              <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[20%] sm:w-[20%] md:w-[20%]">
                 Alloc
               </th>
-              <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[12%] sm:w-[20%] md:w-[20%]">
+              <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[22%] sm:w-[20%] md:w-[20%]">
                 Current Value
               </th>
             </tr>
