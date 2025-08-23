@@ -98,8 +98,8 @@ const StableCoinsDistribution: React.FC<StableCoinsDistributionProps> = ({
                       <TokenChip symbol={item.symbol} color={item.color} />
                     )}
                     <span className="text-base font-medium text-black">
-                      {item.symbol === "USDC"
-                        ? "USDC (USDT deposit via arbitrum)"
+                      {item.symbol === "USDT"
+                        ? "USDC (USDT deposited via Arbitrum)"
                         : item.symbol}
                     </span>
                   </div>
