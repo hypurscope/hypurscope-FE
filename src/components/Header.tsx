@@ -10,7 +10,7 @@ const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
   const params = useParams() as { address?: string }; // ← read dynamic param
-  const onDashboard = pathname.startsWith("/dashboard");
+  const isHome = pathname === "/";
 
   // helper function for active state
   const isActive = (route: string) => pathname === route;
@@ -54,9 +54,9 @@ const Header = () => {
         </Link>
 
         <div className="flex items-center gap-2 font-medium text-base md:text-lg text-tertiary">
-          <Link href={onDashboard ? "/" : "/dashboard"}>
-            <button className="px-3 py-1 md:px-3 md:py-1.5 text-[11px] md:text-base rounded-[8px] md:rounded-[10px] font-medium cursor-pointer text-white bg-[#1969FE]">
-              {onDashboard ? "Home" : "Go to Dashboard"}
+          <Link href={isHome ? "/dashboard" : "/"}>
+            <button className="px-3 py-1 md:px-4 md:py-1 text-[11px] md:text-base rounded-[8px] md:rounded-[10px] font-medium cursor-pointer text-white bg-[#1969FE]">
+              {isHome ? "Go to Dashboard" : "Home"}
             </button>
           </Link>
         </div>
