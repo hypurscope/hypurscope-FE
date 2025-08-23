@@ -17,6 +17,33 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "HypurScope",
   description: "Real-time insights into HyperEVM and HyperCore data layers",
+  openGraph: {
+    title: "HypurScope",
+    description: "Real-time insights into HyperEVM and HyperCore data layers",
+    url: "https://hypurscope.vercel.app/",
+    siteName: "HypurScope",
+    images: [
+      {
+        url: "https://res.cloudinary.com/dhvwthnzq/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1755955314/hyperscope/Frame_247_zlamyk.png",
+        width: 1200,
+        height: 630,
+        alt: "HypurScope OG Image",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "HypurScope",
+    description: "Real-time insights into HyperEVM and HyperCore data layers",
+    images: [
+      {
+        url: "https://res.cloudinary.com/dhvwthnzq/image/upload/f_auto,q_auto/v1755956439/hyperscope/e244d187-992a-422c-adfb-1907049a0634.png",
+        width: 1200,
+        height: 630,
+        alt: "HypurScope OG Image",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
