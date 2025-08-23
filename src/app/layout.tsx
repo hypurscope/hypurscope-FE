@@ -15,7 +15,7 @@ const geistSans = Geist({
 // });
 
 export const metadata: Metadata = {
-  title: "HyperScope",
+  title: "HypurScope",
   description: "Real-time insights into HyperEVM and HyperCore data layers",
 };
 
