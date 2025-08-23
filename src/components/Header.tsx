@@ -40,8 +40,8 @@ const Header = () => {
           <Image
             src="https://res.cloudinary.com/dhvwthnzq/image/upload/v1755898415/hyperscope/Logo_v4tprv.svg"
             alt="Logo"
-            className="h-5 lg:h-8  lg:block w-fit object-contain"
-            width={200}
+            className="h-6 lg:h-8  lg:block w-fit object-contain"
+            width={300}
             height={100}
           />
           {/* <Image
@@ -77,7 +77,7 @@ const Header = () => {
               handleSearch={(e) => setQuery(e.target.value)}
               query={query}
               onSubmit={go}
-              placeholder="Search wallets, protocols, tokens..."
+              placeholder="Paste a wallet address"
             />
           </div>
         </section>
