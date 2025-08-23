@@ -129,7 +129,7 @@ export default function DelegationSummary({ address }: DelegationSummaryProps) {
               </th>
               <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[30%] sm:w-[32%] md:w-[30%]">
                 <span className="sm:hidden">Locked</span>
-                <span className="hidden sm:inline">Locked Until</span>
+                <span className="hidden sm:inline">Locked Since</span>
               </th>
             </tr>
           </thead>
