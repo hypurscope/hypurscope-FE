@@ -38,9 +38,9 @@ const Header = () => {
       <nav className="flex justify-between items-center font-geist-sans">
         <Link href="/">
           <Image
-            src="https://res.cloudinary.com/dhvwthnzq/image/upload/v1755898415/hyperscope/Logo_v4tprv.svg"
+            src="https://res.cloudinary.com/dhvwthnzq/image/upload/v1755955314/hyperscope/Frame_247_zlamyk.png"
             alt="Logo"
-            className="h-6 lg:h-8  lg:block w-fit object-contain"
+            className="h-8  lg:block w-fit object-contain"
             width={300}
             height={100}
           />
