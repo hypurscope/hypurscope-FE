@@ -65,10 +65,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} antialiased bg-white px-6 py-5 lg:py-8 lg:px-20`}
+        className={`${geistSans.variable} antialiased bg-white max-w-[1500px] mx-auto px-6 py-5 lg:py-8 lg:px-16`}
       >
         <Header />
-        <main>{children}</main>
+        <main className="">{children}</main>
       </body>
     </html>
   );
