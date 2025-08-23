@@ -7,6 +7,8 @@ import StakingSummary from "@/components/wallet/StakingSummary";
 import DelegationSummary from "@/components/wallet/DelegationSummary";
 import MetricCard from "@/components/dashboard/MetricCard";
 import { formatUSDCompact } from "@/lib/utils";
+import { Eye } from "lucide-react";
+import WalletHeader from "@/components/wallet/WalletHeader";
 
 const isValidAddress = (s: string) => /^0x[a-fA-F0-9]{40}$/.test(s);
 
@@ -62,7 +64,11 @@ export default async function WalletPage({ params }: Params) {
 
   const overviewData = [
     { label: "Account Value", key: "walletValue", value: accountValue },
-    { label: "Net Volume of Current Trade", key: "netVolume", value: netVolume },
+    {
+      label: "Net Volume of Current Trade",
+      key: "netVolume",
+      value: netVolume,
+    },
     {
       label: "Withdrawable Balance",
       key: "withdrawableBalance",
@@ -72,14 +78,7 @@ export default async function WalletPage({ params }: Params) {
 
   return (
     <div className="mx-auto max-w-6xl py-5 sm:py-8 space-y-6 flex flex-col items-center mt-4 sm:mt-5 md:px-0">
-      <div className="space-y-1 font-geist-sans w-full">
-        <h1 className="text-xl sm:text-2xl font-medium tracking-tight">
-          Perpetuals Portfolio
-        </h1>
-        <p className="text-tertiary text-sm sm:text-base">
-          Complete portfolio value and performance summary
-        </p>
-      </div>
+      <WalletHeader address={address} />
 
       <section className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mt-6 sm:mt-8 mb-12 md:mb-20 mx-auto w-full max-w-4xl">
         {overviewData.map((data) => (
