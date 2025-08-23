@@ -26,7 +26,7 @@ export default function Home() {
   ];
   return (
     <div className="pt-10">
-      <section className="mx-4 md:mx-20 lg:mx-40 grid grid-cols-1 lg:grid-cols-2 gap-4 justify-items-center">
+      <section className="mx-4 md:mx-20 lg:mx-40 flex justify-center items-center">
         <LiveTVLMetric className="w-full lg:max-w-[300px]" />
       </section>
 

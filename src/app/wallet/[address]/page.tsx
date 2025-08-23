@@ -32,7 +32,7 @@ export default async function WalletPage({ params }: Params) {
     const url = `https://hyper-dev-p1ob.onrender.com/api/user-info/${address}?start_time=${encodeURIComponent(
       "2000-01-01 00:00"
     )}`;
-    const res = await fetch(url, { next: { revalidate: 60 } });
+    const res = await fetch(url, { next: { revalidate: 30 } });
     if (res.ok) {
       const data = await res.json();
       const p = data?.user_state?.Portfolio;
