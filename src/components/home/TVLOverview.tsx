@@ -61,9 +61,13 @@ export default function TVLOverview() {
               TVL across all protocols on Hyperliquid L1
             </p>
           </div>
-          <h2 className="font-semibold text-4xl md:text-5xl mt-3">
-            {currentTVL?.displayValue ?? "—"}
-          </h2>
+          {loading ? (
+            <div className="mt-4 h-10 md:h-12 w-40 md:w-56 rounded bg-gray-200 animate-pulse" />
+          ) : (
+            <h2 className="font-semibold text-4xl md:text-5xl mt-3">
+              {currentTVL?.displayValue ?? "—"}
+            </h2>
+          )}
         </div>
         <div>
           <DateRangeTabs
@@ -73,10 +77,20 @@ export default function TVLOverview() {
       </div>
 
       {/* Chart Container */}
-      <div className=" rounded-lg w-full   md:p-6">
-        {error ? (
+      <div className=" rounded-lg w-full md:p-6">
+        {error && !loading && (
           <div className="text-sm text-red-500">{error}</div>
-        ) : (
+        )}
+        {loading && (
+          <div className="w-full h-[340px] md:h-[400px] rounded-lg bg-gray-100 flex flex-col justify-between p-4 animate-pulse">
+            <div className="h-4 w-24 bg-gray-200 rounded" />
+            <div className="flex-1 flex items-center justify-center">
+              <div className="h-32 w-full max-w-md bg-gray-200 rounded" />
+            </div>
+            <div className="h-3 w-full bg-gray-200 rounded" />
+          </div>
+        )}
+        {!loading && !error && (
           <AreaChartComponent
             data={data}
             height={400}

@@ -30,6 +30,7 @@ export default function LiveTVLMetric({
       period: "last 24h",
     },
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -61,12 +62,13 @@ export default function LiveTVLMetric({
                 period: "last 24h",
               },
             });
+            setLoading(false);
           }
+        } else if (!cancelled) {
+          setLoading(false);
         }
       } catch (e) {
-        if (!cancelled) {
-          // leave placeholders; optionally, could set an error state
-        }
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => {
@@ -75,5 +77,7 @@ export default function LiveTVLMetric({
     };
   }, []);
 
-  return <MetricsOverview metric={metric} className={className} />;
+  return (
+    <MetricsOverview metric={metric} loading={loading} className={className} />
+  );
 }

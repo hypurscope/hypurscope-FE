@@ -167,7 +167,15 @@ const AreaChartComponent = ({
         }
         selected = alt;
       }
-      return selected;
+      // ensure uniqueness
+      const uniq: string[] = [];
+      const seenMonths = new Set<string>();
+      for (const v of selected)
+        if (!seenMonths.has(v)) {
+          seenMonths.add(v);
+          uniq.push(v);
+        }
+      return uniq;
     }
 
     // Shorter ranges (24h, 7D, 30D) – generic thinning by step
@@ -176,7 +184,15 @@ const AreaChartComponent = ({
     for (let i = 0; i < labels.length; i += step) out.push(labels[i]);
     if (out[out.length - 1] !== labels[labels.length - 1])
       out.push(labels[labels.length - 1]);
-    return out;
+    // dedupe while preserving order
+    const uniq: string[] = [];
+    const seenTicks = new Set<string>();
+    for (const v of out)
+      if (!seenTicks.has(v)) {
+        seenTicks.add(v);
+        uniq.push(v);
+      }
+    return uniq;
   }, [data, dateRange, width, isSmall]);
 
   return (
