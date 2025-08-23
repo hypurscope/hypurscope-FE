@@ -89,7 +89,7 @@ export default function OpenPositions({ address }: OpenPositionsProps) {
   const isMobile = useMediaQuery("(max-width: 640px)");
 
   return (
-    <section className="space-y-4 max-w-5xl w-full mx-auto mt-8 font-geist-sans">
+    <section className="space-y-4 max-w-5xl w-full mx-auto md:mt-8 font-geist-sans">
       <div>
         <h2 className="text-xl sm:text-2xl font-semibold">Open Positions</h2>
         <p className="text-xs sm:text-sm text-black/50">
@@ -99,24 +99,24 @@ export default function OpenPositions({ address }: OpenPositionsProps) {
 
       <div className="rounded-2xl border border-[#DDE6FF] bg-white">
         <table className="w-full table-fixed text-left text-[11px] sm:text-xs md:text-sm">
-          <thead className="bg-[#EAF1FF] text-[10px] sm:text-xs text-black/70">
+          <thead className="bg-[#EAF1FF] text-[10px] rounded-t-[20px] sm:text-xs text-black/70">
             <tr>
               <th className="px-2  md:px-5 py-2 sm:py-3 font-medium w-[14%]">
                 Asset
               </th>
-              <th className="px-2 sm:px-4 md:px-5 py-2 sm:py-3 font-medium w-[20%]">
+              <th className="px-2 sm:px-4 md:px-5 py-2 sm:py-3 font-medium w-[18%]">
                 Size
               </th>
-              <th className="px-2 sm:px-4 md:px-5 py-2 sm:py-3 font-medium w-[16%]">
+              <th className="px-2 sm:px-4 md:px-5 py-2 sm:py-3 font-medium w-[18%]">
                 Notional
               </th>
               <th className="px-2 sm:px-4 md:px-5 py-2 sm:py-3 font-medium w-[14%]">
                 Entry
               </th>
-              <th className="px-2 sm:px-4 md:px-5 py-2 sm:py-3 font-medium w-[20%]">
+              <th className="px-2 sm:px-4 md:px-5 py-2 sm:py-3 font-medium w-[18%]">
                 uPnL
               </th>
-              <th className="px-2 sm:px-4 md:px-5 py-2 sm:py-3 font-medium w-[10%]">
+              <th className="px-2 sm:px-4 md:px-5 py-2 sm:py-3 font-medium w-[12%]">
                 %
               </th>
             </tr>

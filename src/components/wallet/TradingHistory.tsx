@@ -194,10 +194,10 @@ export default function TradingHistory({ address }: TradingHistoryProps) {
         <table className="w-full min-w-full table-fixed text-left text-[10px] sm:text-[11px] md:text-sm">
           <thead className="bg-[#EAF1FF] text-[9px] sm:text-[10px] md:text-xs text-black/70">
             <tr>
-              <th className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 font-medium w-[30%] sm:w-[14%] whitespace-nowrap">
+              <th className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 font-medium w-[20%] sm:w-[14%] whitespace-nowrap">
                 Token
               </th>
-              <th className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 font-medium w-[18%] sm:w-[14%] whitespace-nowrap">
+              <th className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 font-medium w-[16%] sm:w-[14%] whitespace-nowrap">
                 Entry
               </th>
               <th className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 font-medium w-[18%] sm:w-[10%] whitespace-nowrap">
@@ -217,7 +217,7 @@ export default function TradingHistory({ address }: TradingHistoryProps) {
               <th className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 font-medium w-[22%] sm:w-[12%] whitespace-nowrap">
                 Closed PnL
               </th>
-              <th className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 font-medium w-[12%] sm:w-[10%] whitespace-nowrap">
+              <th className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 font-medium w-[15%] sm:w-[10%] whitespace-nowrap">
                 Size
               </th>
             </tr>

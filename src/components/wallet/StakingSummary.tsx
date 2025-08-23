@@ -98,10 +98,10 @@ export default function StakingSummary({ address }: StakingSummaryProps) {
                   key={e.key}
                   className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 font-medium whitespace-nowrap"
                 >
-                  <span className="sm:hidden capitalize">
+                  <span className="md:hidden capitalize">
                     {shortLabel(e.key)}
                   </span>
-                  <span className="hidden sm:inline">{e.key}</span>
+                  <span className="hidden md:inline">{e.key}</span>
                 </th>
               ))}
               {!entries.length && (
