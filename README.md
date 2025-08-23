@@ -113,8 +113,8 @@ List required variables here (e.g. UPSTREAM_API_URL, RPC_URL, etc.)
 - Keep chart payload lean: strip unused fields, pre-format labels.
 - Use `cache: 'no-store'` only on explicit user actions; otherwise rely on `revalidate` windows.
 
-## Testing (TBD)
-Add a section if unit / integration tests are introduced.
+<!-- ## Testing (TBD)
+Add a section if unit / integration tests are introduced. -->
 
 ## Deployment
 - Optimized for Vercel (edge-aware caching via `revalidate`).
