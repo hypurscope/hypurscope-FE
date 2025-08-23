@@ -16,9 +16,15 @@ import type { HoldersTrendPoint } from "@/types";
 export interface SpotChartProps {
   data: HoldersTrendPoint[];
   maxPoints?: number; // optional cap to thin dense datasets
+  /** Selected range to drive x-axis tick density */
+  dateRange?: "24h" | "7D" | "30D" | "3M" | "6M";
 }
 
-const SpotChart: React.FC<SpotChartProps> = ({ data, maxPoints = 150 }) => {
+const SpotChart: React.FC<SpotChartProps> = ({
+  data,
+  maxPoints = 150,
+  dateRange,
+}) => {
   const thinned = useMemo(() => {
     if (!Array.isArray(data)) return [] as HoldersTrendPoint[];
     if (data.length <= maxPoints) return data;
@@ -53,73 +59,7 @@ const SpotChart: React.FC<SpotChartProps> = ({ data, maxPoints = 150 }) => {
     return [String(value), name];
   };
 
-  // X-axis ticks: adaptive formatting using ts range
-  const tsValues = thinned
-    .map((d) => d.ts)
-    .filter((t): t is number => typeof t === "number" && Number.isFinite(t));
-  const hasTs = tsValues.length >= 2;
-  const minTs = hasTs ? Math.min(...tsValues) : undefined;
-  const maxTs = hasTs ? Math.max(...tsValues) : undefined;
-  const windowMs = hasTs ? maxTs! - minTs! : undefined;
-  const dayMs = 24 * 60 * 60 * 1000;
-  const windowDays = windowMs ? windowMs / dayMs : undefined;
-  const isIntraDay = !!windowMs && windowMs <= 2 * dayMs;
-  const is7D = !!windowDays && windowDays > 2 && windowDays <= 10;
-  const is30D = !!windowDays && windowDays > 10 && windowDays <= 45;
-  const is90D = !!windowDays && windowDays > 45;
-
-  const targetTicks = isIntraDay ? 8 : is7D ? 7 : is30D ? 10 : is90D ? 6 : 8;
-  const skipN = Math.max(1, Math.ceil((thinned.length || 1) / targetTicks));
-
-  const xTickFormatter = (value: any, index: number) => {
-    if (index % skipN !== 0) return "";
-    if (hasTs) {
-      const ts = typeof value === "number" ? value : thinned[index]?.ts;
-      if (!Number.isFinite(ts)) return "";
-      const d = new Date(Number(ts));
-      if (isIntraDay)
-        return d.toLocaleTimeString(undefined, {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-      if (is90D) return d.toLocaleDateString(undefined, { month: "short" });
-      // 7D / 30D
-      return d.toLocaleDateString(undefined, {
-        month: "short",
-        day: "2-digit",
-      });
-    }
-    const label = thinned[index]?.date || "";
-    return is90D ? String(label).split(" ")[0] || label : label;
-  };
-  const xTickStyle =
-    isIntraDay || is7D || is30D || is90D
-      ? { fill: "#111827", fontSize: 10 }
-      : { fill: "#111827" };
-  const labelFormatter = (_label: any, payload: ReadonlyArray<any>) => {
-    const p = payload && payload[0] && payload[0].payload;
-    const ts = p?.ts as number | undefined;
-    if (typeof ts === "number" && Number.isFinite(ts)) {
-      if (isIntraDay) {
-        // show full date and time for intraday
-        return new Date(ts).toLocaleString(undefined, {
-          year: "numeric",
-          month: "short",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-      }
-      return new Date(ts).toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-      });
-    }
-    return p?.date ?? _label;
-  };
-
-  // Track viewport width to adjust axis/legend for small screens
+  // Track viewport width early so we can adapt tick density for small screens
   const [vw, setVw] = useState<number | null>(null);
   useEffect(() => {
     const update = () => setVw(window.innerWidth);
@@ -128,6 +68,246 @@ const SpotChart: React.FC<SpotChartProps> = ({ data, maxPoints = 150 }) => {
     return () => window.removeEventListener("resize", update);
   }, []);
   const isSmall = (vw ?? 1024) < 640;
+
+  // --- Simplified adaptive ticks based ONLY on provided dateRange ---
+  const parsed = useMemo(
+    () =>
+      thinned.map((d) => ({
+        ...d,
+        dt: new Date(d.ts ?? d.date),
+      })),
+    [thinned]
+  );
+
+  type Granularity =
+    | "hourly"
+    | "daily"
+    | "weekly"
+    | "biweekly"
+    | "monthly"
+    | "quarterly";
+
+  const { ticks, granularity, crossesYear } = useMemo(() => {
+    const res: number[] = [];
+    const first = parsed[0];
+    const last = parsed[parsed.length - 1];
+    if (!first || !last)
+      return {
+        ticks: res,
+        granularity: "daily" as Granularity,
+        crossesYear: false,
+      };
+
+    const start = first.dt.getTime();
+    const end = last.dt.getTime();
+
+    // Decide initial base granularity; we'll thin after generation
+    let g: Granularity;
+    switch (dateRange) {
+      case "24h":
+        g = "hourly";
+        break;
+      case "7D":
+        g = "daily";
+        break;
+      case "30D":
+        g = "daily";
+        break; // start daily then thin to ~weekly
+      case "3M":
+        g = "weekly";
+        break; // start weekly then thin
+      case "6M":
+        g = "weekly";
+        break; // start weekly then thin to monthly/quarterly
+      default:
+        g = "daily";
+    }
+
+    // Helpers
+    const push = (t: number) => {
+      if (!res.length || res[res.length - 1] !== t) res.push(t);
+    };
+    const d = new Date(start);
+    // Align start for cleaner labels
+    if (g === "hourly") {
+      // start at first point hour
+      d.setMinutes(0, 0, 0);
+    } else if (g === "daily" || g === "weekly" || g === "biweekly") {
+      d.setHours(0, 0, 0, 0);
+      if (g !== "daily") {
+        // align to Monday
+        const day = d.getDay();
+        const diff = (day + 6) % 7; // days since Monday
+        d.setDate(d.getDate() - diff);
+      }
+    } else if (g === "monthly") {
+      d.setDate(1);
+      d.setHours(0, 0, 0, 0);
+    } else if (g === "quarterly") {
+      d.setDate(1);
+      d.setHours(0, 0, 0, 0);
+      d.setMonth(Math.floor(d.getMonth() / 3) * 3);
+    }
+
+    const add = (cur: Date) => {
+      switch (g) {
+        case "hourly":
+          cur.setHours(cur.getHours() + 1);
+          break;
+        case "daily":
+          cur.setDate(cur.getDate() + 1);
+          break;
+        case "weekly":
+          cur.setDate(cur.getDate() + 7);
+          break;
+        case "biweekly":
+          cur.setDate(cur.getDate() + 14);
+          break;
+        case "monthly":
+          cur.setMonth(cur.getMonth() + 1);
+          break;
+        case "quarterly":
+          cur.setMonth(cur.getMonth() + 3);
+          break;
+      }
+    };
+
+    const cursor = new Date(d.getTime());
+    while (cursor.getTime() <= end) {
+      push(cursor.getTime());
+      add(cursor);
+    }
+    if (res[res.length - 1] !== end) push(end); // ensure last point
+
+    // Thinning to avoid overlapping labels (screen-aware)
+    const maxLabels = (() => {
+      switch (dateRange) {
+        case "24h":
+          return isSmall ? 8 : 12; // every ~2-3h
+        case "7D":
+          return isSmall ? 5 : 8; // daily vs all days
+        case "30D":
+          return isSmall ? 6 : 8; // ~5 day / weekly
+        case "3M":
+          return isSmall ? 6 : 8; // biweekly / monthly blend
+        case "6M":
+          return isSmall ? 6 : 9; // monthly / quarterly
+        default:
+          return isSmall ? 6 : 12;
+      }
+    })();
+    if (res.length > maxLabels) {
+      let filtered = res;
+      if (dateRange === "30D") {
+        // Show more labels: every ~5 days large, ~6 days small (start/end always kept)
+        const targetLabels = isSmall ? 6 : 7; // start + 4-5 inner + end
+        const totalDays = Math.max(1, Math.round((end - start) / 86400000));
+        const stepDays = Math.max(5, Math.ceil(totalDays / (targetLabels - 1))); // ensure at least 5-day spacing
+        filtered = res.filter((ts, idx) => {
+          if (idx === 0 || idx === res.length - 1) return true;
+          const diffDays = Math.round((ts - start) / 86400000);
+          return diffDays % stepDays === 0;
+        });
+      } else if (dateRange === "3M") {
+        const mod = isSmall ? 3 : 2; // every 3rd or 2nd week
+        filtered = res.filter((ts, idx) => {
+          if (idx === 0 || idx === res.length - 1) return true;
+          const dObj = new Date(ts);
+          // show month start regardless
+          if (dObj.getDate() === 1) return true;
+          return idx % mod === 0;
+        });
+      } else if (dateRange === "6M") {
+        // prefer month starts; on small screens fallback to quarter starts
+        const monthStarts = res.filter((ts) => new Date(ts).getDate() === 1);
+        if (!isSmall && monthStarts.length <= maxLabels + 1) {
+          filtered = [
+            res[0],
+            ...monthStarts.filter(
+              (ts) => ts !== res[0] && ts !== res[res.length - 1]
+            ),
+            res[res.length - 1],
+          ];
+        } else {
+          filtered = res.filter((ts) => {
+            const dObj = new Date(ts);
+            return dObj.getDate() === 1 && dObj.getMonth() % 3 === 0; // quarter starts
+          });
+          if (filtered[0] !== res[0]) filtered.unshift(res[0]);
+          if (filtered[filtered.length - 1] !== res[res.length - 1])
+            filtered.push(res[res.length - 1]);
+          g = "quarterly";
+        }
+      } else {
+        const step = Math.ceil(res.length / maxLabels);
+        filtered = res.filter((_ts, idx) => idx % step === 0);
+        if (filtered[filtered.length - 1] !== res[res.length - 1])
+          filtered.push(res[res.length - 1]);
+      }
+      res.length = 0;
+      res.push(...filtered);
+    }
+
+    const crossesYear =
+      new Date(start).getFullYear() !== new Date(end).getFullYear();
+    return { ticks: res, granularity: g, crossesYear };
+  }, [parsed, dateRange, isSmall]);
+
+  const xTickFormatter = useMemo(
+    () => (value: any) => {
+      const ts = Number(value);
+      if (!Number.isFinite(ts)) return "";
+      const d = new Date(ts);
+      const month = d.toLocaleString(undefined, { month: "short" });
+      const day = d.getDate();
+      const yr = d.getFullYear().toString().slice(-2);
+      switch (granularity) {
+        case "hourly":
+          return d.toLocaleTimeString(undefined, {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          });
+        case "daily":
+        case "weekly":
+        case "biweekly":
+          return `${month} ${day}`;
+        case "monthly":
+          return crossesYear ? `${month} '${yr}` : month;
+        case "quarterly":
+          return crossesYear
+            ? `Q${Math.floor(d.getMonth() / 3) + 1} '${yr}`
+            : `Q${Math.floor(d.getMonth() / 3) + 1}`;
+        default:
+          return `${month} ${day}`;
+      }
+    },
+    [granularity, crossesYear]
+  );
+
+  const labelFormatter = (_label: any, payload: ReadonlyArray<any>) => {
+    const p = payload?.[0]?.payload;
+    const ts = p?.ts;
+    if (typeof ts === "number") {
+      if (granularity === "hourly") {
+        return new Date(ts).toLocaleString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+      }
+      return new Date(ts).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+      });
+    }
+    return _label;
+  };
+  const xTickStyle = { fill: "#111827", fontSize: 10 };
 
   const leftTickFont = isSmall ? 10 : 12;
   const rightTickFont = isSmall ? 9 : 11;
@@ -158,15 +338,19 @@ const SpotChart: React.FC<SpotChartProps> = ({ data, maxPoints = 150 }) => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#EFEFEF" />
             <XAxis
-              dataKey={hasTs ? "ts" : "date"}
-              tick={{
-                ...xTickStyle,
-                fontSize: isSmall ? 9 : xTickStyle.fontSize || 10,
-              }}
+              dataKey="ts"
+              type="number"
+              scale="time"
+              domain={[
+                parsed[0]?.dt.getTime(),
+                parsed[parsed.length - 1]?.dt.getTime(),
+              ]}
+              ticks={ticks}
+              tick={{ ...xTickStyle, fontSize: isSmall ? 9 : 10 }}
               tickLine={false}
               axisLine={false}
-              interval="preserveStartEnd"
-              minTickGap={isSmall ? 10 : 20}
+              interval={0}
+              minTickGap={8}
               tickFormatter={xTickFormatter}
             />
             {/* Left Y axis for amounts in M */}
@@ -222,7 +406,7 @@ const SpotChart: React.FC<SpotChartProps> = ({ data, maxPoints = 150 }) => {
             />
             {thinned.length > 80 && !isSmall && (
               <Brush
-                dataKey={hasTs ? "ts" : "date"}
+                dataKey="ts"
                 height={16}
                 stroke="#D1D5DB"
                 travellerWidth={8}

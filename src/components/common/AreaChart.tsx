@@ -79,54 +79,205 @@ const AreaChartComponent = ({
   const tickFontSize = isSmall ? 10 : 12;
   const xTickMargin = isSmall ? 6 : 10;
 
-  // Dynamic X axis tick formatting based on dateRange & viewport
-  const buildTickFormatter = () => {
-    if (!dateRange) return (v: any) => v;
-    return (value: any) => {
-      // Expect value as a date string like 'Aug 21' or ISO; attempt parse
-      const raw = String(value);
-      const parsed = new Date(raw);
-      if (!isNaN(parsed.getTime())) {
-        const month = parsed.toLocaleString(undefined, { month: "short" });
-        const day = parsed.getDate();
-        const yearShort = parsed.getFullYear().toString().slice(-2);
-        if (dateRange === "24h" || dateRange === "7D") {
-          return `${month} ${day}`; // show month + day
-        }
-        if (dateRange === "30D") {
-          return `${month} ${day}`; // still granular
-        }
-        if (dateRange === "3M") {
-          return `${month} '${yearShort}`; // month + 'yy
-        }
-        if (dateRange === "6M") {
-          return `${month} '${yearShort}`; // rely on interval thinning
-        }
+  // Build parsed date helpers once
+  const parsed = React.useMemo(
+    () =>
+      data.map((d) => {
+        const dt = new Date(d.date);
+        return { raw: d.date, dt };
+      }),
+    [data]
+  );
+
+  // Adaptive tick selection & label formatting strategy
+  type Granularity =
+    | "hourly"
+    | "daily"
+    | "weekly"
+    | "biweekly"
+    | "monthly"
+    | "quarterly"
+    | "raw";
+
+  const { ticks, granularity, crossesYear, hourlyWithMinutes } =
+    React.useMemo(() => {
+      if (!dateRange) {
+        return {
+          ticks: data.map((d) => d.date),
+          granularity: "raw" as Granularity,
+          crossesYear: false,
+          hourlyWithMinutes: false,
+        };
       }
-      return raw;
-    };
-  };
 
-  // Decide interval: larger ranges show fewer ticks
-  const xInterval: any = (() => {
-    if (isSmall) return "preserveStartEnd"; // let Recharts reduce automatically
-    switch (dateRange) {
-      case "24h":
-        return 0; // show all
-      case "7D":
-        return 0; // daily points
-      case "30D":
-        return 2; // every 3rd label approx
-      case "3M":
-        return 5; // monthly-ish depending on data density
-      case "6M":
-        return 10; // show sparse months
-      default:
-        return 0;
-    }
-  })();
+      const result: string[] = [];
+      const years = new Set<number>();
+      parsed.forEach((p) => years.add(p.dt.getFullYear()));
+      const crossesYear = years.size > 1;
 
-  const xTickFormatter = buildTickFormatter();
+      const pushUnique = (s: string) => {
+        if (!result.length || result[result.length - 1] !== s) result.push(s);
+      };
+
+      const dayKey = (dt: Date) =>
+        `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+      const monthKey = (dt: Date) => `${dt.getFullYear()}-${dt.getMonth()}`;
+      const weekKey = (dt: Date) => {
+        // ISO week approximation: Thursday-based
+        const tmp = new Date(
+          Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate())
+        );
+        const day = tmp.getUTCDay() || 7;
+        tmp.setUTCDate(tmp.getUTCDate() + 4 - day);
+        const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil(
+          ((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
+        );
+        return `${tmp.getUTCFullYear()}-W${weekNo}`;
+      };
+
+      let granularity: Granularity = "daily";
+      let hourlyWithMinutes = false;
+
+      if (dateRange === "24h") {
+        granularity = "hourly";
+        // Pick roughly every 2 hours (or each hour if small dataset)
+        const hours: string[] = [];
+        const seenHour = new Set<string>();
+        parsed.forEach((p) => {
+          if (isNaN(p.dt.getTime())) return;
+          const key = `${p.dt.getFullYear()}-${p.dt.getMonth()}-${p.dt.getDate()}-${p.dt.getHours()}`;
+          if (!seenHour.has(key)) {
+            seenHour.add(key);
+            hours.push(p.raw);
+          }
+        });
+        const step = hours.length > 14 ? 2 : 1;
+        for (let i = 0; i < hours.length; i += step) pushUnique(hours[i]);
+        if (result[result.length - 1] !== hours[hours.length - 1])
+          pushUnique(hours[hours.length - 1]);
+        // If dataset has minute resolution (determine by diff of first two points < 1h) show minutes on tooltip only
+        hourlyWithMinutes =
+          parsed.length >= 2 &&
+          parsed[1].dt.getTime() - parsed[0].dt.getTime() < 3600_000;
+      } else if (dateRange === "7D") {
+        granularity = "daily";
+        const seen = new Set<string>();
+        parsed.forEach((p) => {
+          if (isNaN(p.dt.getTime())) return;
+          const key = dayKey(p.dt);
+          if (!seen.has(key)) {
+            seen.add(key);
+            pushUnique(p.raw);
+          }
+        });
+      } else if (dateRange === "30D") {
+        // Weekly markers (ISO week first occurrence)
+        granularity = "weekly";
+        const seenWeek = new Set<string>();
+        parsed.forEach((p) => {
+          if (isNaN(p.dt.getTime())) return;
+          const wk = weekKey(p.dt);
+          if (!seenWeek.has(wk)) {
+            seenWeek.add(wk);
+            pushUnique(p.raw);
+          }
+        });
+      } else if (dateRange === "3M") {
+        // Bi-weekly if manageable else monthly
+        const seenWeek = new Set<string>();
+        const byWeek: string[] = [];
+        parsed.forEach((p) => {
+          if (isNaN(p.dt.getTime())) return;
+          const wk = weekKey(p.dt);
+          if (!seenWeek.has(wk)) {
+            seenWeek.add(wk);
+            byWeek.push(p.raw);
+          }
+        });
+        if (byWeek.length <= 16) {
+          granularity = "biweekly";
+          // take every 2nd week marker
+          for (let i = 0; i < byWeek.length; i += 2) pushUnique(byWeek[i]);
+          if (result[result.length - 1] !== byWeek[byWeek.length - 1])
+            pushUnique(byWeek[byWeek.length - 1]);
+        } else {
+          granularity = "monthly";
+          const seenMonth = new Set<string>();
+          parsed.forEach((p) => {
+            const mk = monthKey(p.dt);
+            if (!seenMonth.has(mk)) {
+              seenMonth.add(mk);
+              pushUnique(p.raw);
+            }
+          });
+        }
+      } else if (dateRange === "6M") {
+        // Monthly; if too many ( > 8 ) reduce to quarterly
+        let months: string[] = [];
+        const seenMonth = new Set<string>();
+        parsed.forEach((p) => {
+          if (isNaN(p.dt.getTime())) return;
+          const mk = monthKey(p.dt);
+          if (!seenMonth.has(mk)) {
+            seenMonth.add(mk);
+            months.push(p.raw);
+          }
+        });
+        if (months.length > 8) {
+          granularity = "quarterly";
+          const quarterFirst: string[] = [];
+          const seenQuarter = new Set<string>();
+          parsed.forEach((p) => {
+            if (isNaN(p.dt.getTime())) return;
+            const q = Math.floor(p.dt.getMonth() / 3) + 1;
+            const key = `${p.dt.getFullYear()}-Q${q}`;
+            if (!seenQuarter.has(key)) {
+              seenQuarter.add(key);
+              quarterFirst.push(p.raw);
+            }
+          });
+          months = quarterFirst;
+        } else {
+          granularity = "monthly";
+        }
+        months.forEach(pushUnique);
+      }
+
+      return { ticks: result, granularity, crossesYear, hourlyWithMinutes };
+    }, [dateRange, data, parsed]);
+
+  const xTickFormatter = React.useCallback(
+    (value: any) => {
+      const dt = new Date(value);
+      if (isNaN(dt.getTime())) return value;
+      const month = dt.toLocaleString(undefined, { month: "short" });
+      const day = dt.getDate();
+      const yearShort = dt.getFullYear().toString().slice(-2);
+      switch (granularity) {
+        case "hourly":
+          return dt.toLocaleTimeString(undefined, {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          });
+        case "daily":
+          return `${month} ${day}`;
+        case "weekly":
+        case "biweekly":
+          return `${month} ${day}`; // show start of week / marker day
+        case "monthly":
+          return crossesYear ? `${month} '${yearShort}` : month;
+        case "quarterly": {
+          const q = Math.floor(dt.getMonth() / 3) + 1;
+          return crossesYear ? `Q${q} '${yearShort}` : `Q${q}`;
+        }
+        default:
+          return `${month} ${day}`;
+      }
+    },
+    [granularity, crossesYear]
+  );
 
   // Hide vertical grid lines on small for clarity
   const showVerticalGrid = !isSmall;
@@ -134,66 +285,8 @@ const AreaChartComponent = ({
   // Unique gradient id (supports multiple charts on a page)
   const gradientId = useId().replace(/:/g, "");
 
-  // Build thinned tick array to avoid overlap across ranges / widths
-  const ticks = React.useMemo(() => {
-    if (!data || data.length === 0) return [] as any[];
-    const labels = data.map((d) => d.date);
-    if (!dateRange) return labels; // fallback (may be thinned later by interval)
-
-    const avail = width ?? 1024;
-    const approxLabelW = isSmall ? 34 : 50; // px heuristic
-    const maxLabels = Math.max(2, Math.floor(avail / approxLabelW));
-
-    // Month-based handling for multi‑month ranges
-    if (dateRange === "3M" || dateRange === "6M") {
-      const monthFirstLabel: { key: string; label: string }[] = [];
-      const seen = new Set<string>();
-      for (const lbl of labels) {
-        const d = new Date(lbl);
-        if (isNaN(d.getTime())) continue;
-        const key = `${d.getFullYear()}-${d.getMonth()}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          monthFirstLabel.push({ key, label: lbl });
-        }
-      }
-      let selected = monthFirstLabel.map((m) => m.label);
-      if (dateRange === "6M" && selected.length > maxLabels) {
-        // pick every 2nd month, always include last
-        const alt: string[] = [];
-        for (let i = 0; i < selected.length; i += 2) alt.push(selected[i]);
-        if (alt[alt.length - 1] !== selected[selected.length - 1]) {
-          alt.push(selected[selected.length - 1]);
-        }
-        selected = alt;
-      }
-      // ensure uniqueness
-      const uniq: string[] = [];
-      const seenMonths = new Set<string>();
-      for (const v of selected)
-        if (!seenMonths.has(v)) {
-          seenMonths.add(v);
-          uniq.push(v);
-        }
-      return uniq;
-    }
-
-    // Shorter ranges (24h, 7D, 30D) – generic thinning by step
-    const step = Math.max(1, Math.ceil(labels.length / maxLabels));
-    const out: string[] = [];
-    for (let i = 0; i < labels.length; i += step) out.push(labels[i]);
-    if (out[out.length - 1] !== labels[labels.length - 1])
-      out.push(labels[labels.length - 1]);
-    // dedupe while preserving order
-    const uniq: string[] = [];
-    const seenTicks = new Set<string>();
-    for (const v of out)
-      if (!seenTicks.has(v)) {
-        seenTicks.add(v);
-        uniq.push(v);
-      }
-    return uniq;
-  }, [data, dateRange, width, isSmall]);
+  // ticks already computed in memo; ensure fallback for no data
+  const ticksToUse = ticks && ticks.length ? ticks : data.map((d) => d.date);
 
   return (
     <div className={className} style={{ height: effectiveHeight }}>
@@ -223,10 +316,9 @@ const AreaChartComponent = ({
             dataKey="date"
             axisLine={false}
             tickLine={false}
-            // Provide explicit ticks to control density & prevent overlap
-            ticks={ticks}
+            ticks={ticksToUse}
             interval={0}
-            tick={{ fontSize: tickFontSize, fill: "#9CA3AF" }}
+            tick={{ fontSize: tickFontSize, fill: "#6B7280" }}
             tickMargin={xTickMargin}
             tickFormatter={xTickFormatter}
           />

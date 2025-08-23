@@ -144,7 +144,7 @@ const USDCSpotHolders: React.FC = () => {
 
         {/* Chart */}
         <div className="w-full">
-          <SpotChart data={chartData} />
+          <SpotChart key={range} data={chartData} dateRange={range} />
         </div>
         {error && (
           <p className="text-xs sm:text-sm text-red-500 mt-2">{error}</p>
