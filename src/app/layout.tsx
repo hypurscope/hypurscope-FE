@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     siteName: "HypurScope",
     images: [
       {
-        url: "https://res.cloudinary.com/dhvwthnzq/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1755955314/hyperscope/Frame_247_zlamyk.png",
+        url: "https://res.cloudinary.com/dhvwthnzq/image/upload/f_auto,q_auto/v1755955314/hyperscope/Frame_247_zlamyk.png",
         width: 1200,
         height: 630,
         alt: "HypurScope OG Image",
