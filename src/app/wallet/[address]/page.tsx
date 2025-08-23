@@ -100,7 +100,7 @@ export default async function WalletPage({ params }: Params) {
 
       <section className="space-y-14 md:space-y-20 w-full mt-10 md:mt-14">
         <SpotTokenHoldings address={address} />
-        <StakingSummary />
+        <StakingSummary address={address} />
         <DelegationSummary address={address} />
       </section>
     </div>
