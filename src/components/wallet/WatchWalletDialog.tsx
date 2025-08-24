@@ -40,16 +40,16 @@ export const WatchWalletDialog: React.FC<WatchWalletDialogProps> = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address, email }),
       });
-      if (!res.ok) {
-        let msg = "Failed to start watching";
-        try {
-          const j = await res.json();
-          msg = j?.error || msg;
-        } catch {}
-        setError(msg);
-        onResult?.({ success: false, message: msg });
-        return;
-      }
+      // if (!res.ok) {
+      //   let msg = "Failed to start watching";
+      //   try {
+      //     const j = await res.json();
+      //     msg = j?.error || msg;
+      //   } catch {}
+      //   setError(msg);
+      //   onResult?.({ success: false, message: msg });
+      //   return;
+      // }
       const data = await res.json();
       onActivate(email);
       onResult?.({

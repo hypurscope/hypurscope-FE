@@ -108,7 +108,7 @@ const WalletHeader: React.FC<WalletHeaderProps> = ({ address }) => {
           ) : (
             <EyeOff className="h-4 w-4" />
           )}
-          {watching ? "Watching" : "Watch wallet"}
+          {watching ? "Unwatch" : "Watch wallet"}
         </Button>
       </div>
       <WatchWalletDialog
