@@ -1,35 +1,64 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { formatNumberCompact, formatUSDCompact } from "@/lib/utils";
+// No external format helpers needed here; using lightweight local versions for clarity
 import { Pagination } from "@/components/ui/pagination";
 import MetricCard from "@/components/dashboard/MetricCard";
 
 type SpotTokenHoldingsProps = { address: string };
 
-type Row = {
+interface RawRow {
   token: string;
-  balance: string; // compact amount, no commas
-  value: string; // USD compact
-  allocation: string; // percent with %
-  currentValue: string; // computed current USD value or N/A
-};
-
-// Responsive media query hook (mirrors approach in TokenHolders)
-function useMediaQuery(query: string) {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia(query);
-    const handler = () => setMatches(mq.matches);
-    handler();
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [query]);
-  return matches;
+  balance: number; // token amount
+  entryValue: number; // TOTAL USD at entry (cost basis)
+  currentValue: number | null; // TOTAL USD current
+}
+interface DisplayRow {
+  token: string;
+  balance: string;
+  entryValue: string;
+  allocation: string;
+  currentValue: string;
 }
 
 export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
-  const [rows, setRows] = useState<Row[]>([]);
+  // (truncate, never round) ---
+  const trunc = (n: number, d = 2) => {
+    if (!Number.isFinite(n)) return NaN;
+    const f = 10 ** d;
+    return Math.trunc(n * f) / f;
+  };
+  const compact = (
+    value: number | null | undefined,
+    d = 2,
+    prefix = ""
+  ): string => {
+    const n = Number(value);
+    if (!isFinite(n)) return "-";
+    const sign = n < 0 ? "-" : "";
+    let abs = Math.abs(n);
+    let suffix = "";
+    if (abs >= 1e12) {
+      abs /= 1e12;
+      suffix = "T";
+    } else if (abs >= 1e9) {
+      abs /= 1e9;
+      suffix = "B";
+    } else if (abs >= 1e6) {
+      abs /= 1e6;
+      suffix = "M";
+    } else if (abs >= 1e3) {
+      abs /= 1e3;
+      suffix = "K";
+    }
+    const t = trunc(abs, d).toFixed(d); // keep two decimals; remove trailing zeros right after
+    const cleaned = t
+      .replace(/\.0+$|(?<=\.\d*[1-9])0+$/g, "")
+      .replace(/\.$/, "");
+    return `${sign}${prefix}${cleaned}${suffix}`;
+  };
+  const usd = (v: number | null | undefined) => compact(v, 2, "$");
+  const pct = (v: number) => trunc(v, 2).toFixed(2); // always show exactly 2
+  const [rawRows, setRawRows] = useState<RawRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -49,44 +78,16 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
         if (!res.ok) throw new Error("Failed to load spot holdings");
         const data = await res.json();
         const holdings = (data?.user_spot_state?.["Holdings"] || []) as any[];
-
-        // Compute USD values and allocations
-        const detailed = holdings.map((h) => {
-          const coin = String(h?.coin ?? "-");
-          const total = Number(h?.total ?? 0); // quantity (balance)
-          const entry = Number(h?.entry ?? 0); // USD price at entry per unit
-          const priceNow =
-            h?.value_in_usd !== undefined ? Number(h?.value_in_usd) : undefined; // current unit price if provided
-          const usd = total * entry; // value at entry
-          // Current value rules:
-          // 1. If token is USDC -> balance * 1
-          // 2. Else if value_in_usd present -> balance * value_in_usd
-          // 3. Else -> N/A
-          let currentValue: string;
-          if (coin.toUpperCase() === "USDC") {
-            currentValue = formatUSDCompact(total * 1, 2);
-          } else if (priceNow !== undefined && isFinite(priceNow)) {
-            currentValue = formatUSDCompact(total * priceNow, 2);
-          } else {
-            currentValue = "N/A";
-          }
-          return { coin, total, entry, usd, currentValue };
-        });
-        const sumUSD =
-          detailed.reduce((acc, d) => acc + (isFinite(d.usd) ? d.usd : 0), 0) ||
-          0;
-        const mapped: Row[] = detailed.map((d) => {
-          const pct = sumUSD > 0 ? (d.usd / sumUSD) * 100 : 0;
-          return {
-            token: d.coin,
-            balance: formatNumberCompact(d.total, 2),
-            value: formatUSDCompact(d.usd, 2),
-            allocation: `${pct.toFixed(2)}%`,
-            currentValue: d.currentValue,
-          };
-        });
+        // Assumption: h.entry is TOTAL entry USD value; h.value_in_usd is current total USD value
+        const mapped: RawRow[] = holdings.map((h) => ({
+          token: String(h?.coin ?? "-"),
+          balance: Number(h?.total ?? 0),
+          entryValue: Number(h?.entry ?? 0),
+          currentValue:
+            h?.value_in_usd !== undefined ? Number(h.value_in_usd) : null,
+        }));
         if (!cancelled) {
-          setRows(mapped);
+          setRawRows(mapped);
           setPage(1);
         }
       } catch (e: any) {
@@ -101,14 +102,31 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
     };
   }, [address]);
 
-  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
-  const paged = useMemo(() => {
+  const totalPages = Math.max(1, Math.ceil(rawRows.length / pageSize));
+
+  const sumEntry = useMemo(
+    () =>
+      rawRows.reduce(
+        (acc, r) => acc + (isFinite(r.entryValue) ? r.entryValue : 0),
+        0
+      ),
+    [rawRows]
+  );
+
+  const paged: DisplayRow[] = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return rows.slice(start, start + pageSize);
-  }, [rows, page]);
-
-  const isMobile = useMediaQuery("(max-width: 640px)");
-
+    const slice = rawRows.slice(start, start + pageSize);
+    return slice.map((r) => {
+      const alloc = sumEntry > 0 ? (r.entryValue / sumEntry) * 100 : 0;
+      return {
+        token: r.token,
+        balance: compact(r.balance),
+        entryValue: usd(r.entryValue),
+        allocation: `${pct(alloc)}%`,
+        currentValue: r.currentValue == null ? "N/A" : usd(r.currentValue),
+      };
+    });
+  }, [rawRows, page, sumEntry]);
 
   // Aggregated metrics
   type Metrics = {
@@ -117,26 +135,20 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
     topToken: string;
     topValue: number;
   } | null;
-  const metrics: Metrics = useMemo(() => {
-    if (!rows.length) return null;
+  const metrics = useMemo(() => {
+    if (!rawRows.length) return null;
     let totalValue = 0;
     let topToken = "-";
     let topValue = 0;
-    rows.forEach((r) => {
-      const usd = Number(r.value.replace(/[^0-9.+-]/g, "")) || 0;
-      totalValue += usd;
-      if (usd > topValue) {
-        topValue = usd;
+    rawRows.forEach((r) => {
+      totalValue += r.entryValue;
+      if (r.entryValue > topValue) {
+        topValue = r.entryValue;
         topToken = r.token;
       }
     });
-    return {
-      count: rows.length,
-      totalValue,
-      topToken,
-      topValue,
-    };
-  }, [rows]);
+    return { count: rawRows.length, totalValue, topToken, topValue };
+  }, [rawRows]);
 
   return (
     <section className="space-y-5 font-geist-sans max-w-6xl w-full mx-auto">
@@ -150,7 +162,7 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-        {loading && !rows.length
+        {loading && !rawRows.length
           ? Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
@@ -165,12 +177,12 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
                 <MetricCard label="Tokens" value={String(metrics.count)} />
                 <MetricCard
                   label="Total Value at Entry"
-                  value={formatUSDCompact(metrics.totalValue, 2)}
+                  value={usd(metrics.totalValue)}
                 />
                 <MetricCard label="Top Token Entry" value={metrics.topToken} />
                 <MetricCard
                   label="Top Value at Entry"
-                  value={formatUSDCompact(metrics.topValue, 2)}
+                  value={usd(metrics.topValue)}
                 />
               </>
             )}
@@ -198,48 +210,43 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
             </tr>
           </thead>
           <tbody>
-            {paged.map((r) => {
-              const allocationDisplay = isMobile
-                ? r.allocation.replace(/(\d+\.\d{2})(\d*)/, "$1")
-                : r.allocation;
-              return (
-                <tr
-                  key={r.token}
-                  className="border-t border-[#EEF3FF] text-[10px] sm:text-[11px] md:text-sm"
+            {paged.map((r) => (
+              <tr
+                key={r.token}
+                className="border-t border-[#EEF3FF] text-[10px] sm:text-[11px] md:text-sm"
+              >
+                <td
+                  className="px-3 sm:px-5 py-3 font-medium whitespace-nowrap truncate"
+                  title={r.token}
                 >
-                  <td
-                    className="px-3 sm:px-5 py-3 align-middle whitespace-nowrap font-medium overflow-hidden truncate"
-                    title={r.token}
-                  >
-                    {r.token}
-                  </td>
-                  <td
-                    className="px-3 sm:px-5 py-3 align-middle whitespace-nowrap overflow-hidden truncate"
-                    title={r.balance}
-                  >
-                    {r.balance}
-                  </td>
-                  <td
-                    className="px-3 sm:px-5 py-3 align-middle whitespace-nowrap"
-                    title={r.value}
-                  >
-                    {r.value}
-                  </td>
-                  <td
-                    className="px-3 sm:px-5 py-3 align-middle whitespace-nowrap"
-                    title={r.allocation}
-                  >
-                    {allocationDisplay}
-                  </td>
-                  <td
-                    className="px-3 sm:px-5 py-3 align-middle whitespace-nowrap"
-                    title={r.currentValue}
-                  >
-                    {r.currentValue}
-                  </td>
-                </tr>
-              );
-            })}
+                  {r.token}
+                </td>
+                <td
+                  className="px-3 sm:px-5 py-3 whitespace-nowrap"
+                  title={r.balance}
+                >
+                  {r.balance}
+                </td>
+                <td
+                  className="px-3 sm:px-5 py-3 whitespace-nowrap"
+                  title={r.entryValue}
+                >
+                  {r.entryValue}
+                </td>
+                <td
+                  className="px-3 sm:px-5 py-3 whitespace-nowrap"
+                  title={r.allocation}
+                >
+                  {r.allocation}
+                </td>
+                <td
+                  className="px-3 sm:px-5 py-3 whitespace-nowrap"
+                  title={r.currentValue}
+                >
+                  {r.currentValue}
+                </td>
+              </tr>
+            ))}
             {paged.length === 0 && !loading && !error && (
               <tr>
                 <td
@@ -251,7 +258,7 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
               </tr>
             )}
             {loading &&
-              !rows.length &&
+              !rawRows.length &&
               Array.from({ length: 6 }).map((_, i) => (
                 <tr
                   key={`sk-${i}`}
@@ -287,7 +294,7 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
           </tbody>
         </table>
       </div>
-      {rows.length > pageSize && (
+      {rawRows.length > pageSize && (
         <Pagination
           page={page}
           totalPages={totalPages}
