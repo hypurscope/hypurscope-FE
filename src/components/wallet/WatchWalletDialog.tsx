@@ -14,7 +14,8 @@ interface WatchWalletDialogProps {
   address: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onActivate: (email: string) => void;
+  onActivate: (email: string) => void; // success path
+  onResult?: (result: { success: boolean; message: string }) => void; // toast hook
 }
 
 export const WatchWalletDialog: React.FC<WatchWalletDialogProps> = ({
@@ -22,17 +23,39 @@ export const WatchWalletDialog: React.FC<WatchWalletDialogProps> = ({
   open,
   onOpenChange,
   onActivate,
+  onResult,
 }) => {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     try {
       setSubmitting(true);
-      await new Promise((r) => setTimeout(r, 400)); // placeholder
+      setError(null);
+      const res = await fetch("/api/track-wallet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address, email }),
+      });
+      if (!res.ok) {
+        let msg = "Failed to start watching";
+        try {
+          const j = await res.json();
+          msg = j?.error || msg;
+        } catch {}
+        setError(msg);
+        onResult?.({ success: false, message: msg });
+        return;
+      }
+      const data = await res.json();
       onActivate(email);
+      onResult?.({
+        success: true,
+        message: data?.message || "Watching wallet",
+      });
       onOpenChange(false);
     } finally {
       setSubmitting(false);
@@ -78,6 +101,11 @@ export const WatchWalletDialog: React.FC<WatchWalletDialogProps> = ({
                 required
               />
             </div>
+            {error && (
+              <p className="text-[11px] sm:text-xs text-red-500" role="alert">
+                {error}
+              </p>
+            )}
             <div className="space-y-3">
               <p className="text-xs sm:text-sm font-medium">
                 Notification Types
