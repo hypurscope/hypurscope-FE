@@ -123,9 +123,10 @@ export default function OpenPositions({ address }: OpenPositionsProps) {
           </thead>
           <tbody>
             {rows.map((r) => {
+              // Display scaled percentage (original pnlPct * 10) per user request
               const pct =
                 r.pnlPct !== undefined
-                  ? `${r.pnlPct >= 0 ? "+" : ""}${r.pnlPct.toFixed(
+                  ? `${r.pnlPct >= 0 ? "+" : ""}${(r.pnlPct * 10).toFixed(
                       isMobile ? 1 : 2
                     )}%`
                   : "—";
