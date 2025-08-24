@@ -149,7 +149,7 @@ const GrowthTrends: React.FC<GrowthTrendsProps> = ({
           </ResponsiveContainer>
         </div>
       </div>
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-start lg:items-center">
         <h3 className="text-2xl font-medium text-black">
           Stablecoin Distribution
         </h3>

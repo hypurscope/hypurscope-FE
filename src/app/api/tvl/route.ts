@@ -1,16 +1,9 @@
+import { parseUpstreamDate, toNumber } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
-export const revalidate = 300; // cache 5 minutes
+export const revalidate = 10; // cache 10 seconds
 
 type ChartPoint = { date: string; value: number; displayValue: string };
-
-// Small helpers
-const toNum = (v: unknown): number =>
-    typeof v === "number"
-        ? v
-        : typeof v === "string"
-            ? ((n) => (Number.isFinite(n) ? n : NaN))(Number(v.replace?.(/[^0-9.\-eE]/g, "") ?? v))
-            : NaN;
 
 const fmtUSD = (n: number): string => {
     if (!Number.isFinite(n)) return "$0";
@@ -23,19 +16,6 @@ const fmtUSD = (n: number): string => {
 };
 
 // Accepts dates like "YYYY-MM-DD HH:mm", "YY:MM:DD HH:mm", etc.
-const parseUpstreamDate = (s: string): number => {
-    if (!s) return NaN;
-    const parts = s.split(/[^0-9]/).filter(Boolean); // [y, m, d, hh, mm]
-    if (parts.length < 3) return NaN;
-    let y = Number(parts[0]);
-    const m = Number(parts[1]);
-    const d = Number(parts[2]);
-    const hh = Number(parts[3] ?? 0);
-    const mm = Number(parts[4] ?? 0);
-    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return NaN;
-    if (y < 100) y += 2000; // 24 => 2024
-    return Date.UTC(y, Math.max(0, m - 1), d, hh, mm, 0);
-};
 
 const thresholdFor = (range?: string): number | null => {
     const now = Date.now();
@@ -58,7 +38,7 @@ export async function GET(req: NextRequest) {
     const chainFilter = searchParams.get("chain") ?? undefined; // optional chain
     const range = searchParams.get("range") ?? undefined; // 24h|7D|30D|90D
 
-    const upstream = "https://hyper-dev-p1ob.onrender.com/api/defi";
+    const upstream = "https://hyper-e1nj.onrender.com/api/defi";
     const res = await fetch(upstream, { next: { revalidate } });
     if (!res.ok) return NextResponse.json("Upstream error", { status: 502 });
     const json = await res.json();
@@ -75,12 +55,12 @@ export async function GET(req: NextRequest) {
             for (const item of series) {
                 const ts = parseUpstreamDate(String(item?.date ?? ""));
                 if (!Number.isFinite(ts)) continue;
-                let value = toNum(item?.totalLiquidityUSD);
+                let value = toNumber(item?.totalLiquidityUSD);
                 if (!Number.isFinite(value) || value === 0) {
                     const tokens = item?.tokens && typeof item.tokens === "object" ? item.tokens : undefined;
                     if (tokens) {
                         value = Object.values(tokens as Record<string, unknown>)
-                            .map(toNum)
+                            .map(toNumber)
                             .filter((n): n is number => Number.isFinite(n))
                             .reduce((acc, n) => acc + n, 0);
                     }

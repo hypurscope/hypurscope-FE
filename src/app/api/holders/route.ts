@@ -1,6 +1,7 @@
+import { toNumber } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
-export const revalidate = 300; // 5 min cache
+export const revalidate = 10; // 10 seconds cache
 
 type UpstreamResponse = {
     token: string;
@@ -8,12 +9,6 @@ type UpstreamResponse = {
     holders: Record<string, number>;
 };
 
-const toNumber = (v: unknown): number =>
-    typeof v === "number"
-        ? v
-        : typeof v === "string"
-            ? Number(v.replace?.(/[^0-9.\-eE]/g, "") ?? v)
-            : NaN;
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -28,7 +23,7 @@ export async function GET(req: NextRequest) {
         );
     }
 
-    const upstream = `https://hyper-dev-p1ob.onrender.com/api/get-holder/${encodeURIComponent(token)}`;
+    const upstream = `https://hyper-e1nj.onrender.com/api/get-holder/${encodeURIComponent(token)}`;
     const res = await fetch(upstream, { next: { revalidate } });
     if (!res.ok) return NextResponse.json("Upstream error", { status: 502 });
     const json = (await res.json()) as UpstreamResponse;

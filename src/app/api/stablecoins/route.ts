@@ -1,54 +1,16 @@
+import { parseUpstreamDate, toNumber } from "@/lib/utils";
 import { NextResponse } from "next/server";
 
-export const revalidate = 300; // 5 minutes
+export const revalidate = 10; // 10 seconds
 
-type TrendPoint = { date: string; USDC: number; USDT: number };
-type StablecoinItem = {
-    symbol: string;
-    value: number;
-    percent: number;
-    changePct: number;
-    color?: string;
-    logo?: string;
-};
-
-const toNum = (v: unknown): number =>
-    typeof v === "number"
-        ? v
-        : typeof v === "string"
-            ? ((n) => (Number.isFinite(n) ? n : NaN))(Number(v.replace?.(/[^0-9.\-eE]/g, "") ?? v))
-            : NaN;
-
-const parseUpstreamDate = (s: string): number => {
-    if (!s) return NaN;
-    const parts = s.split(/[^0-9]/).filter(Boolean); // [y, m, d, hh?, mm?]
-    if (parts.length < 3) return NaN;
-    let y = Number(parts[0]);
-    const m = Number(parts[1]);
-    const d = Number(parts[2]);
-    const hh = Number(parts[3] ?? 0);
-    const mm = Number(parts[4] ?? 0);
-    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return NaN;
-    if (y < 100) y += 2000;
-    return Date.UTC(y, Math.max(0, m - 1), d, hh, mm, 0);
-};
 
 const DATE_FMT = (ts: number) =>
     new Date(ts).toLocaleDateString(undefined, { month: "short", day: "2-digit" });
 
-const LOGOS: Record<string, string> = {
-    USDC: "https://res.cloudinary.com/dhvwthnzq/image/upload/v1755596889/hyperscope/usdc_vdcozh.svg",
-    USDT: "https://res.cloudinary.com/dhvwthnzq/image/upload/v1755596886/hyperscope/Group_zwqult.svg",
-};
-
-const COLORS: Record<string, string> = {
-    USDC: "#2775CA",
-    USDT: "#26A17B",
-};
 
 export async function GET() {
     try {
-        const res = await fetch("https://hyper-dev-p1ob.onrender.com/api/defi", {
+        const res = await fetch("https://hyper-e1nj.onrender.com/api/defi", {
             next: { revalidate },
         });
         if (!res.ok) return NextResponse.json({ error: "Upstream error" }, { status: 502 });
@@ -67,16 +29,16 @@ export async function GET() {
         if (tokensInUsd) {
             rows = tokensInUsd.map((entry: any) => {
                 const t = entry?.tokens ?? {};
-                const USDC = toNum((t as any).USDC) || 0;
-                const USDT = toNum((t as any).USDT) || 0;
+                const USDC = toNumber((t as any).USDC) || 0;
+                const USDT = toNumber((t as any).USDT) || 0;
                 return { date: String(entry.date), USDC, USDT, total: USDC + USDT };
             });
         } else {
             rows = tvl
                 .map((entry: any) => {
                     const t = entry?.tokens ?? {};
-                    const USDC = toNum((t as any).USDC) || 0;
-                    const USDT = toNum((t as any).USDT) || 0;
+                    const USDC = toNumber((t as any).USDC) || 0;
+                    const USDT = toNumber((t as any).USDT) || 0;
                     const total = USDC + USDT;
                     const ts = parseUpstreamDate(String(entry.date ?? ""));
                     const date = Number.isFinite(ts) ? DATE_FMT(ts) : String(entry.date ?? "");

@@ -5,6 +5,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+
+export const toNumber = (v: unknown): number =>
+    typeof v === "number"
+        ? v
+        : typeof v === "string"
+            ? Number(v.replace?.(/[^0-9.\-eE]/g, "") ?? v)
+            : NaN;
+
 // Format a number into a compact string without commas, e.g. 1250000 -> "1.25M"
 export function formatNumberCompact(value: number | null | undefined, decimals = 2): string {
   const n = Number(value)
@@ -30,3 +38,17 @@ export function formatUSDCompact(value: number | null | undefined, decimals = 2)
   const compact = formatNumberCompact(Math.abs(n), decimals)
   return `${sign}$${compact}`
 }
+
+export const parseUpstreamDate = (s: string): number => {
+    if (!s) return NaN;
+    const parts = s.split(/[^0-9]/).filter(Boolean); // [y, m, d, hh?, mm?]
+    if (parts.length < 3) return NaN;
+    let y = Number(parts[0]);
+    const m = Number(parts[1]);
+    const d = Number(parts[2]);
+    const hh = Number(parts[3] ?? 0);
+    const mm = Number(parts[4] ?? 0);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return NaN;
+    if (y < 100) y += 2000;
+    return Date.UTC(y, Math.max(0, m - 1), d, hh, mm, 0);
+};
