@@ -66,7 +66,7 @@ const SearchInput = ({
           type="text"
           className="w-full rounded-l-[10px] font-geist-sans h-full p-2 md:p-2.5 text-sm md:text-base outline-none bg-transparent"
           placeholder={placeholder}
-          aria-invalid={showError}
+          aria-invalid={showError ? "true" : "false"}
           aria-describedby={showError ? "search-error" : undefined}
         />
         <button
