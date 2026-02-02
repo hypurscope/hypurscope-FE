@@ -21,12 +21,9 @@ export const metadata: Metadata = {
 
   // Favicon setup
   icons: {
-    icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "any" }, // fallback for older browsers
-    ],
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png", // optional for iOS home screen
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg", // optional for iOS home screen
   },
 
   // Open Graph for social sharing
