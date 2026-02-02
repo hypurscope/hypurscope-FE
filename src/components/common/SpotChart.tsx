@@ -76,7 +76,7 @@ const SpotChart: React.FC<SpotChartProps> = ({
         ...d,
         dt: new Date(d.ts ?? d.date),
       })),
-    [thinned]
+    [thinned],
   );
 
   type Granularity =
@@ -224,7 +224,7 @@ const SpotChart: React.FC<SpotChartProps> = ({
           filtered = [
             res[0],
             ...monthStarts.filter(
-              (ts) => ts !== res[0] && ts !== res[res.length - 1]
+              (ts) => ts !== res[0] && ts !== res[res.length - 1],
             ),
             res[res.length - 1],
           ];
@@ -282,7 +282,7 @@ const SpotChart: React.FC<SpotChartProps> = ({
           return `${month} ${day}`;
       }
     },
-    [granularity, crossesYear]
+    [granularity, crossesYear],
   );
 
   const labelFormatter = (_label: any, payload: ReadonlyArray<any>) => {
@@ -314,9 +314,21 @@ const SpotChart: React.FC<SpotChartProps> = ({
   const rightAxisTick = { fill: "#10B981", fontSize: rightTickFont };
   const leftAxisTick = { fill: "#111827", fontSize: leftTickFont };
 
+  // Accessibility summary
+  const chartSummary = React.useMemo(() => {
+    if (!thinned.length) return "No data available";
+    const first = thinned[0];
+    const last = thinned[thinned.length - 1];
+    return `USDC Spot Holders chart showing Spot USDC from $${first.spotUSDCM.toFixed(1)}M to $${last.spotUSDCM.toFixed(1)}M, holders from ${first.holders} to ${last.holders}, and HIP-2 from $${first.hip2M.toFixed(1)}M to $${last.hip2M.toFixed(1)}M over ${thinned.length} data points`;
+  }, [thinned]);
+
   return (
     <div className="w-full">
-      <div className="h-[300px] sm:h-[360px] md:h-[420px]">
+      <div
+        className="h-[300px] sm:h-[360px] md:h-[420px]"
+        role="img"
+        aria-label={chartSummary}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={thinned}

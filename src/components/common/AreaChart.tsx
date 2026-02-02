@@ -69,13 +69,13 @@ const AreaChartComponent = ({
   const effectiveHeight = isSmall
     ? Math.min(height, 260)
     : isMedium
-    ? Math.min(height, 320)
-    : height;
+      ? Math.min(height, 320)
+      : height;
   const margin = isSmall
     ? { top: 10, right: 12, left: 0, bottom: 10 }
     : isMedium
-    ? { top: 16, right: 20, left: 16, bottom: 16 }
-    : { top: 20, right: 30, left: 20, bottom: 20 };
+      ? { top: 16, right: 20, left: 16, bottom: 16 }
+      : { top: 20, right: 30, left: 20, bottom: 20 };
   const tickFontSize = isSmall ? 10 : 12;
   const xTickMargin = isSmall ? 6 : 10;
 
@@ -86,7 +86,7 @@ const AreaChartComponent = ({
         const dt = new Date(d.date);
         return { raw: d.date, dt };
       }),
-    [data]
+    [data],
   );
 
   // Adaptive tick selection & label formatting strategy
@@ -125,13 +125,13 @@ const AreaChartComponent = ({
       const weekKey = (dt: Date) => {
         // ISO week approximation: Thursday-based
         const tmp = new Date(
-          Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate())
+          Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()),
         );
         const day = tmp.getUTCDay() || 7;
         tmp.setUTCDate(tmp.getUTCDate() + 4 - day);
         const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
         const weekNo = Math.ceil(
-          ((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
+          ((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
         );
         return `${tmp.getUTCFullYear()}-W${weekNo}`;
       };
@@ -276,7 +276,7 @@ const AreaChartComponent = ({
           return `${month} ${day}`;
       }
     },
-    [granularity, crossesYear]
+    [granularity, crossesYear],
   );
 
   // Hide vertical grid lines on small for clarity
@@ -288,8 +288,27 @@ const AreaChartComponent = ({
   // ticks already computed in memo; ensure fallback for no data
   const ticksToUse = ticks && ticks.length ? ticks : data.map((d) => d.date);
 
+  // Accessibility: compute summary for screen readers
+  const chartSummary = React.useMemo(() => {
+    if (!data.length) return "No data available";
+    const values = data.map((d) => d.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const first = values[0];
+    const last = values[values.length - 1];
+    const trend =
+      last > first ? "increasing" : last < first ? "decreasing" : "stable";
+
+    return `TVL chart showing ${trend} trend from ${data[0].displayValue || `$${(first / 1e9).toFixed(1)}B`} to ${data[data.length - 1].displayValue || `$${(last / 1e9).toFixed(1)}B`} over ${data.length} data points`;
+  }, [data]);
+
   return (
-    <div className={className} style={{ height: effectiveHeight }}>
+    <div
+      className={className}
+      style={{ height: effectiveHeight }}
+      role="img"
+      aria-label={chartSummary}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <RechartsAreaChart data={data} margin={margin}>
           <defs>

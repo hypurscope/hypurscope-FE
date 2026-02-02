@@ -30,7 +30,7 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
   const compact = (
     value: number | null | undefined,
     d = 2,
-    prefix = ""
+    prefix = "",
   ): string => {
     const n = Number(value);
     if (!isFinite(n)) return "-";
@@ -72,8 +72,8 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
         setError(null);
         const res = await fetch(
           `/api/user-info/${address}?start_time=${encodeURIComponent(
-            "2000-01-01 00:00"
-          )}`
+            "2000-01-01 00:00",
+          )}`,
         );
         if (!res.ok) throw new Error("Failed to load spot holdings");
         const data = await res.json();
@@ -108,9 +108,9 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
     () =>
       rawRows.reduce(
         (acc, r) => acc + (isFinite(r.entryValue) ? r.entryValue : 0),
-        0
+        0,
       ),
-    [rawRows]
+    [rawRows],
   );
 
   const paged: DisplayRow[] = useMemo(() => {
@@ -156,7 +156,7 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
         <h2 className="text-xl sm:text-2xl font-semibold">
           Spot Token Holdings
         </h2>
-        <p className="text-xs sm:text-sm text-black/50">
+        <p className="text-xs sm:text-sm text-gray-600">
           Current token balances and allocations
         </p>
       </div>
@@ -251,7 +251,7 @@ export default function SpotTokenHoldings({ address }: SpotTokenHoldingsProps) {
               <tr>
                 <td
                   colSpan={5}
-                  className="px-3 sm:px-5 py-6 text-center text-black/50 text-xs sm:text-sm"
+                  className="px-3 sm:px-5 py-6 text-center text-gray-600 text-xs sm:text-sm"
                 >
                   No holdings
                 </td>

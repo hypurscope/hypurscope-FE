@@ -27,6 +27,8 @@ function DateRangeTabs({
 
   return (
     <div
+      role="group"
+      aria-label="Select time range"
       className={`flex gap-2 overflow-x-auto md:overflow-visible scrollbar-thin scrollbar-thumb-gray-300 pr-1 -ml-1 md:ml-0 md:pr-0 ${className}`}
     >
       {ranges.map((range) => {
@@ -35,6 +37,8 @@ function DateRangeTabs({
           <button
             key={range}
             type="button"
+            aria-label={`Select ${range} time range`}
+            aria-pressed={isActive}
             className={`relative rounded-xl transition-colors font-medium whitespace-nowrap px-3 py-1.5 text-xs md:px-4 md:py-2 md:text-sm border ${
               isActive
                 ? "text-white border-black"

@@ -1,53 +1,43 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import AreaChartComponent from "../common/AreaChart";
 import DateRangeTabs, { DateRange } from "../common/DateRangeTabs";
+import { useTVL, type TVLResponse } from "@/hooks";
 
 type ChartPoint = { date: string; value: number; displayValue: string };
 
-export default function TVLOverview() {
+export default function TVLOverview({
+  initialData,
+}: {
+  initialData?: TVLResponse;
+}) {
   const [selectedRange, setSelectedRange] = useState<DateRange>("7D");
-  const [data, setData] = useState<ChartPoint[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    const controller = new AbortController();
-    async function load() {
-      try {
-        setLoading(true);
-        setError(null);
-        // Map UI ranges to API query values
-        const apiRange =
-          selectedRange === "3M"
-            ? "90D"
-            : selectedRange === "30D"
-            ? "30D"
-            : selectedRange === "6M"
-            ? "180D"
-            : selectedRange; // 24h / 7D
-        const res = await fetch(`/api/tvl?range=${apiRange}`, {
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error("Failed to load TVL");
-        const json = await res.json();
-        if (!cancelled) setData(json.items ?? []);
-      } catch (e: any) {
-        if (!cancelled && e.name !== "AbortError")
-          setError(e?.message ?? "Error");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  // Map UI ranges to API query values
+  const apiRange = useMemo(() => {
+    switch (selectedRange) {
+      case "3M":
+        return "90D";
+      case "30D":
+        return "30D";
+      case "6M":
+        return "180D";
+      default:
+        return selectedRange; // 24h / 7D
     }
-    load();
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
   }, [selectedRange]);
 
-  const currentTVL = useMemo(() => data[data.length - 1], [data]);
+  const { data, isLoading, error } = useTVL(
+    apiRange,
+    undefined,
+    selectedRange === "7D" ? initialData : undefined,
+  );
+
+  const chartData: ChartPoint[] = data?.items ?? [];
+  const currentTVL = useMemo(
+    () => chartData[chartData.length - 1],
+    [chartData],
+  );
 
   return (
     <section className="py-6 font-geist-sans">
@@ -61,7 +51,7 @@ export default function TVLOverview() {
               TVL across all protocols on Hyperliquid L1
             </p>
           </div>
-          {loading ? (
+          {isLoading ? (
             <div className="mt-4 h-10 md:h-12 w-40 md:w-56 rounded bg-gray-200 animate-pulse" />
           ) : (
             <h2 className="font-semibold text-4xl md:text-5xl mt-3">
@@ -78,10 +68,12 @@ export default function TVLOverview() {
 
       {/* Chart Container */}
       <div className=" rounded-lg w-full md:p-6">
-        {error && !loading && (
-          <div className="text-sm text-red-500">{error}</div>
+        {error && !isLoading && (
+          <div className="text-sm text-red-500" role="alert">
+            {error.message || "Failed to load data"}
+          </div>
         )}
-        {loading && (
+        {isLoading && (
           <div className="w-full h-[340px] md:h-[400px] rounded-lg bg-gray-100 flex flex-col justify-between p-4 animate-pulse">
             <div className="h-4 w-24 bg-gray-200 rounded" />
             <div className="flex-1 flex items-center justify-center">
@@ -90,9 +82,9 @@ export default function TVLOverview() {
             <div className="h-3 w-full bg-gray-200 rounded" />
           </div>
         )}
-        {!loading && !error && (
+        {!isLoading && !error && (
           <AreaChartComponent
-            data={data}
+            data={chartData}
             height={400}
             color="#3B82F6"
             gradient={true}

@@ -131,10 +131,10 @@ export async function GET() {
             },
         ];
 
-        console.log("[stablecoins][rows]", rows.slice(-5));
-        console.log("[stablecoins][trend last]", latest);
-        console.log("[stablecoins][distribution]", distribution);
-        console.log("[stablecoins][current]", current);
+        // console.log("[stablecoins][rows]", rows.slice(-5));
+        // console.log("[stablecoins][trend last]", latest);
+        // console.log("[stablecoins][distribution]", distribution);
+        // console.log("[stablecoins][current]", current);
 
         return NextResponse.json({
             rows, // all token rows

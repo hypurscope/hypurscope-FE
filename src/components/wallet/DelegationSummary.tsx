@@ -38,8 +38,8 @@ export default function DelegationSummary({ address }: DelegationSummaryProps) {
         setError(null);
         const res = await fetch(
           `/api/user-info/${address}?start_time=${encodeURIComponent(
-            "2000-01-01 00:00"
-          )}`
+            "2000-01-01 00:00",
+          )}`,
         );
         if (!res.ok) throw new Error("Failed to load delegations");
         const data = await res.json();
@@ -79,9 +79,9 @@ export default function DelegationSummary({ address }: DelegationSummaryProps) {
     () =>
       formatNumberCompact(
         rows.reduce((a, r) => a + Number(r.amount.replace(/[^\d.-]/g, "")), 0),
-        2
+        2,
       ),
-    [rows]
+    [rows],
   );
   const activeValidators = rows.length.toString();
 
@@ -93,7 +93,7 @@ export default function DelegationSummary({ address }: DelegationSummaryProps) {
         <h2 className="text-xl sm:text-2xl font-semibold">
           Delegation Summary
         </h2>
-        <p className="text-xs sm:text-sm text-black/50">
+        <p className="text-xs sm:text-sm text-gray-600">
           Your current delegations
         </p>
       </div>
@@ -163,7 +163,7 @@ export default function DelegationSummary({ address }: DelegationSummaryProps) {
               <tr>
                 <td
                   colSpan={3}
-                  className="px-3 sm:px-5 py-6 text-center text-black/50 text-xs sm:text-sm"
+                  className="px-3 sm:px-5 py-6 text-center text-gray-600 text-xs sm:text-sm"
                 >
                   No delegations
                 </td>

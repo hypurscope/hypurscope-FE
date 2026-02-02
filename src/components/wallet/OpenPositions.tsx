@@ -47,8 +47,8 @@ export default function OpenPositions({ address }: OpenPositionsProps) {
         setError(null);
         const res = await fetch(
           `/api/user-info/${address}?start_time=${encodeURIComponent(
-            "2000-01-01 00:00"
-          )}`
+            "2000-01-01 00:00",
+          )}`,
         );
         if (!res.ok) throw new Error("Failed to load user state");
         const data = await res.json();
@@ -92,7 +92,7 @@ export default function OpenPositions({ address }: OpenPositionsProps) {
     <section className="space-y-4 max-w-5xl w-full mx-auto md:mt-8 font-geist-sans">
       <div>
         <h2 className="text-xl sm:text-2xl font-semibold">Open Positions</h2>
-        <p className="text-xs sm:text-sm text-black/50">
+        <p className="text-xs sm:text-sm text-gray-600">
           Current trading positions
         </p>
       </div>
@@ -127,7 +127,7 @@ export default function OpenPositions({ address }: OpenPositionsProps) {
               const pct =
                 r.pnlPct !== undefined
                   ? `${r.pnlPct >= 0 ? "+" : ""}${(r.pnlPct * 10).toFixed(
-                      isMobile ? 1 : 2
+                      isMobile ? 1 : 2,
                     )}%`
                   : "—";
               const sizeShort = isMobile
@@ -166,7 +166,7 @@ export default function OpenPositions({ address }: OpenPositionsProps) {
               <tr>
                 <td
                   colSpan={6}
-                  className="px-4 py-6 text-center text-black/50 text-xs sm:text-sm"
+                  className="px-4 py-6 text-center text-gray-600 text-xs sm:text-sm"
                 >
                   No open positions
                 </td>

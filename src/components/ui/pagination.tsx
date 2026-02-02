@@ -45,7 +45,7 @@ export function Pagination({
       </button>
       {windowed.map((p, i) =>
         p === "dots" ? (
-          <span key={`dots-${i}`} className="px-2 text-xs text-black/50">
+          <span key={`dots-${i}`} className="px-2 text-xs text-gray-600">
             …
           </span>
         ) : (
@@ -56,12 +56,12 @@ export function Pagination({
               "rounded-md px-2 py-1 text-xs",
               p === page
                 ? "bg-black text-white"
-                : "border border-black/10 bg-white text-black"
+                : "border border-black/10 bg-white text-black",
             )}
           >
             {p}
           </button>
-        )
+        ),
       )}
       <button
         onClick={goto(page + 1)}

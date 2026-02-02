@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "HypurScope",
     description: "Real-time insights into HyperEVM and HyperCore data layers",
-    url: "https://hypurscope.vercel.app/",
+    url: "https://www.hypurscope.xyz/",
     siteName: "HypurScope",
     images: [
       {
@@ -67,8 +68,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} antialiased bg-white max-w-[1500px] mx-auto px-6 py-5 lg:py-8 lg:px-16`}
       >
-        <Header />
-        <main className="">{children}</main>
+        <QueryProvider>
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded"
+          >
+            Skip to main content
+          </a>
+          <Header />
+          <main id="main-content">{children}</main>
+        </QueryProvider>
       </body>
     </html>
   );

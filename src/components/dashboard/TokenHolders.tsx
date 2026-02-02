@@ -8,7 +8,7 @@ import MetricCard from "./MetricCard";
 // ---- Formatting helpers (hoisted so they're not recreated each render) ----
 const fmtInt = (n?: number) =>
   new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
-    Math.round(Number(n) || 0)
+    Math.round(Number(n) || 0),
   );
 const fmtCompact = (n?: number) => {
   const x = Number(n) || 0;
@@ -19,7 +19,7 @@ const fmtCompact = (n?: number) => {
   if (abs >= 1e6) return `${format(x / 1e6)}M`;
   if (abs >= 1e3) return `${format(x / 1e3)}K`;
   return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(
-    x
+    x,
   );
 };
 const fmtDateOnly = (s?: string | null) => {
@@ -91,13 +91,13 @@ export default function TokenHolders() {
     token: string,
     p: number,
     ps: number,
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ) => {
     const res = await fetch(
       `/api/holders?token=${encodeURIComponent(
-        token
+        token,
       )}&page=${p}&pageSize=${ps}`,
-      { signal }
+      { signal },
     );
     if (!res.ok) throw new Error("Failed to fetch holders");
     return res.json();
@@ -208,19 +208,37 @@ export default function TokenHolders() {
       <section className="mt-14">
         <div className="rounded-2xl border border-[#DDE6FF] bg-white">
           <table className="w-full table-fixed text-left text-[11px] sm:text-xs md:text-sm">
+            <caption className="sr-only">
+              Top holders for {query || "selected token"} showing {rows.length}{" "}
+              addresses
+            </caption>
             <thead className="bg-[#EAF1FF] text-[10px] sm:text-xs text-black/70">
               <tr>
-                <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[46px]">
+                <th
+                  scope="col"
+                  className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[46px]"
+                >
                   Rank
                 </th>
-                <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[45%]">
+                <th
+                  scope="col"
+                  className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[45%]"
+                >
                   Address
                 </th>
-                <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[25%]">
+                <th
+                  scope="col"
+                  className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[25%]"
+                >
                   Amount
                 </th>
-                <th className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[20%]">
-                  <span className="sm:hidden text-[9px] whitespace-nowrap">% (Top 2K)</span>
+                <th
+                  scope="col"
+                  className="px-3 sm:px-5 py-2 sm:py-3 font-medium w-[20%]"
+                >
+                  <span className="sm:hidden text-[9px] whitespace-nowrap">
+                    % (Top 2K)
+                  </span>
                   <span className="hidden sm:inline">% Share (Top 2000)</span>
                 </th>
               </tr>
@@ -256,7 +274,7 @@ export default function TokenHolders() {
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-3 sm:px-5 py-6 text-center text-black/50"
+                    className="px-3 sm:px-5 py-6 text-center text-gray-600"
                   >
                     {query ? "No results" : "Enter a token symbol to search"}
                   </td>
@@ -295,7 +313,7 @@ export default function TokenHolders() {
             </tbody>
           </table>
           <div className="px-3 sm:px-5 py-2">
-            <p className="text-[10px] text-black/50">
+            <p className="text-[10px] text-gray-600">
               * Percentages are based on the top 2000 holders returned by this
               API (not the full on-chain holder set).
             </p>

@@ -22,19 +22,19 @@ export default function StakingSummary({ address }: StakingSummaryProps) {
         setError(null);
         const res = await fetch(
           `/api/user-info/${address}?start_time=${encodeURIComponent(
-            "2000-01-01 00:00"
-          )}`
+            "2000-01-01 00:00",
+          )}`,
         );
         if (!res.ok) throw new Error("Failed to load staking summary");
         const data = await res.json();
         const root = data?.staking_summary || {};
-        console.log(root);
+  
         const topKeys = Object.keys(root);
-        console.log(topKeys);
+
         if (topKeys.length) {
           const k = topKeys[0];
           const obj = root[k];
-          console.log(obj);
+       
 
           if (!cancelled && obj && typeof obj === "object") {
             setTitle(k || "Staking Summary");
@@ -84,7 +84,7 @@ export default function StakingSummary({ address }: StakingSummaryProps) {
     <section className="space-y-5 font-geist-sans max-w-6xl w-full mx-auto">
       <div>
         <h2 className="text-xl sm:text-2xl font-semibold">{title}</h2>
-        <p className="text-xs sm:text-sm text-black/50">
+        <p className="text-xs sm:text-sm text-gray-600">
           On-chain staking status
         </p>
       </div>
@@ -146,7 +146,7 @@ export default function StakingSummary({ address }: StakingSummaryProps) {
               <tr>
                 <td
                   colSpan={colSpan}
-                  className="px-3 sm:px-5 py-6 text-center text-black/50 text-xs sm:text-sm"
+                  className="px-3 sm:px-5 py-6 text-center text-gray-600 text-xs sm:text-sm"
                 >
                   No staking data
                 </td>

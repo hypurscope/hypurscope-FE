@@ -55,8 +55,8 @@ export default function TradingHistory({ address }: TradingHistoryProps) {
         setError(null);
         const res = await fetch(
           `/api/user-info/${address}?start_time=${encodeURIComponent(
-            "2000-01-01 00:00"
-          )}`
+            "2000-01-01 00:00",
+          )}`,
         );
         if (!res.ok) throw new Error("Failed to load trading history");
         const data = await res.json();
@@ -182,7 +182,7 @@ export default function TradingHistory({ address }: TradingHistoryProps) {
                   label="Net PnL"
                   value={`${metrics.netPnl > 0 ? "+" : ""}${formatNumberCompact(
                     Math.abs(metrics.netPnl),
-                    2
+                    2,
                   )}`}
                 />
               </>
@@ -280,7 +280,7 @@ export default function TradingHistory({ address }: TradingHistoryProps) {
             {paged.length === 0 && !loading && (
               <tr>
                 <td
-                  className="px-3 sm:px-5 py-6 text-center text-black/50 text-xs sm:text-sm"
+                  className="px-3 sm:px-5 py-6 text-center text-gray-600 text-xs sm:text-sm"
                   colSpan={8}
                 >
                   No trades

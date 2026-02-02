@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 import Tabs from "@/components/common/Tabs";
 import OpenPositions from "@/components/wallet/OpenPositions";
 import TradingHistory from "@/components/wallet/TradingHistory";
@@ -19,6 +20,34 @@ type Params = {
   }>;
 };
 
+// Generate metadata for social sharing
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { address } = await params;
+
+  if (!isValidAddress(address)) {
+    return {
+      title: "Invalid Address - HypurScope",
+    };
+  }
+
+  const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+
+  return {
+    title: `Wallet ${shortAddress} - HypurScope`,
+    description: `View portfolio, trading history, and positions for wallet ${shortAddress} on HyperEVM`,
+    openGraph: {
+      title: `Wallet ${shortAddress} - HypurScope`,
+      description: `View portfolio, trading history, and positions for wallet ${shortAddress} on HyperEVM`,
+      url: `https://hypurscope.vercel.app/wallet/${address}`,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Wallet ${shortAddress} - HypurScope`,
+      description: `View portfolio, trading history, and positions for wallet ${shortAddress} on HyperEVM`,
+    },
+  };
+}
+
 // Receive params from Next.js directly
 export default async function WalletPage({ params }: Params) {
   const { address } = await params;
@@ -32,7 +61,7 @@ export default async function WalletPage({ params }: Params) {
 
   try {
     const url = `https://hyper-dev-p1ob.onrender.com/api/user-info/${address}?start_time=${encodeURIComponent(
-      "2000-01-01 00:00"
+      "2000-01-01 00:00",
     )}`;
     const res = await fetch(url, { next: { revalidate: 30 } });
     if (res.ok) {

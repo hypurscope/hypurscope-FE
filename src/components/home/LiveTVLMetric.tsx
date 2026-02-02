@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import MetricsOverview from "@/components/common/MetricsOverview";
 import type { MetricData } from "@/types";
+import { useTVL, type TVLResponse } from "@/hooks";
 
 function fmtUSD(n: number): string {
   if (!Number.isFinite(n)) return "$0";
@@ -18,70 +19,50 @@ function fmtUSD(n: number): string {
 
 export default function LiveTVLMetric({
   className = "",
+  initialData,
 }: {
   className?: string;
+  initialData?: TVLResponse;
 }) {
-  const [metric, setMetric] = useState<MetricData>({
-    label: "Total Value Locked",
-    value: "—",
-    change: {
-      percentage: "—",
-      direction: "up",
-      period: "last 24h",
-    },
-  });
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useTVL("24h", undefined, initialData);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/tvl?range=24h", {
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error("Failed to load TVL");
-        const json = await res.json();
-        const items: Array<{ value: number }> = Array.isArray(json?.items)
-          ? json.items
-          : [];
-        if (items.length >= 1) {
-          const first = items[0];
-          const last = items[items.length - 1];
-          const current = Number(last.value) || 0;
-          const base = Number(first.value) || 0;
-          const diff = current - base;
-          const pct = base > 0 ? (diff / base) * 100 : 0;
-          if (!cancelled) {
-            setMetric({
-              label: "Total Value Locked",
-              value: fmtUSD(current),
-              change: {
-                percentage: `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`,
-                direction: pct >= 0 ? "up" : "down",
-                period: "last 24h",
-              },
-            });
-            setLoading(false);
-          }
-        } else if (!cancelled) {
-          setLoading(false);
-        }
-      } catch (e) {
-        if (!cancelled){
-          setLoading(false);
-          console.error(e)
-        }
-        ;
-      }
-    })();
-    return () => {
-      cancelled = true;
-      controller.abort();
+  const metric = useMemo<MetricData>(() => {
+    if (!data || !data.items || data.items.length === 0) {
+      return {
+        label: "Total Value Locked",
+        value: "—",
+        change: {
+          percentage: "—",
+          direction: "up",
+          period: "last 24h",
+        },
+      };
+    }
+
+    const items = data.items;
+    const first = items[0];
+    const last = items[items.length - 1];
+    const current = Number(last.value) || 0;
+    const base = Number(first.value) || 0;
+    const diff = current - base;
+    const pct = base > 0 ? (diff / base) * 100 : 0;
+
+    return {
+      label: "Total Value Locked",
+      value: fmtUSD(current),
+      change: {
+        percentage: `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`,
+        direction: pct >= 0 ? "up" : "down",
+        period: "last 24h",
+      },
     };
-  }, []);
+  }, [data]);
 
   return (
-    <MetricsOverview metric={metric} loading={loading} className={className} />
+    <MetricsOverview
+      metric={metric}
+      loading={isLoading}
+      className={className}
+    />
   );
 }
